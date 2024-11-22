@@ -77,7 +77,6 @@ def convert_to_pdf(pptx_path):
     import platform
     import tempfile
     import os
-    import subprocess
 
     if platform.system() == "Windows":
         # Conversão no Windows com PowerPoint
@@ -103,6 +102,9 @@ def convert_to_pdf(pptx_path):
             ppt_app.Quit()
     else:
         # Conversão no Railway com LibreOffice
+        import subprocess
+
+        # Configuração do diretório temporário
         output_dir = "/tmp"  # Diretório temporário padrão no Railway
         pdf_name = f"{uuid.uuid4().hex}.pdf"
         pdf_path = os.path.join(output_dir, pdf_name)
@@ -112,7 +114,7 @@ def convert_to_pdf(pptx_path):
 
         # Comando para conversão
         command = [
-            "/usr/bin/libreoffice",  # Caminho absoluto para o binário do LibreOffice
+            "libreoffice",
             "--headless",
             "--convert-to",
             "pdf",
@@ -123,14 +125,10 @@ def convert_to_pdf(pptx_path):
 
         try:
             # Executar o comando e verificar o resultado
-            subprocess.run(command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            # Verificar se o arquivo PDF foi criado
-            if not os.path.exists(pdf_path):
-                raise FileNotFoundError(f"Falha ao criar o PDF: {pdf_path}")
+            subprocess.run(command, check=True)
             return pdf_path
         except subprocess.CalledProcessError as e:
-            error_msg = e.stderr.decode("utf-8") if e.stderr else "Erro desconhecido."
-            raise Exception(f"Erro ao converter para PDF com LibreOffice. Comando executado: {' '.join(command)}. Detalhes: {error_msg}")
+            raise Exception(f"Erro ao converter para PDF com LibreOffice. Comando executado: {' '.join(command)}")
 
 
 
