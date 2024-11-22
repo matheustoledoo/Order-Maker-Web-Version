@@ -68,6 +68,7 @@ def adicionar_objetos_dinamicos(slide, lista_objetos):
             aplicar_formatacao(paragraph)
         top += espacamento_vertical
 
+
 def convert_to_pdf(pptx_path):
     """
     Converte o arquivo PPTX para PDF usando o PowerPoint via COM no Windows
@@ -97,10 +98,16 @@ def convert_to_pdf(pptx_path):
     else:
         # Conversão no Railway com LibreOffice
         pdf_path = tempfile.NamedTemporaryFile(suffix=".pdf", delete=False).name
-        command = f"libreoffice --headless --convert-to pdf --outdir {os.path.dirname(pdf_path)} {pptx_path}"
-        if os.system(command) != 0:
-            raise Exception("Erro ao converter para PDF com LibreOffice.")
-        return pdf_path
+        output_dir = os.path.dirname(pdf_path)
+
+        # Comando para conversão
+        command = f"libreoffice --headless --convert-to pdf --outdir {output_dir} {pptx_path}"
+        conversion_result = os.system(command)
+
+        if conversion_result != 0:
+            raise Exception(f"Erro ao converter para PDF com LibreOffice. Comando executado: {command}")
+        return os.path.join(output_dir, os.path.basename(pdf_path))
+
 
 @app.route("/", methods=["GET", "POST"])
 def index():
