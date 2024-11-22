@@ -71,57 +71,36 @@ def adicionar_objetos_dinamicos(slide, lista_objetos):
 
 def convert_to_pdf(pptx_path):
     """
-    Converte o arquivo PPTX para PDF usando o PowerPoint via COM no Windows
-    ou LibreOffice no Linux (Railway).
+    Converte o arquivo PPTX para PDF usando PowerPoint via COM no Windows.
     """
     import platform
+    import pythoncom
+    import comtypes.client
     import tempfile
     import os
 
-    if platform.system() == "Windows":
-        # Conversão no Windows com PowerPoint
-        import pythoncom
-        import comtypes.client
-        pythoncom.CoInitialize()
-        ppt_app = comtypes.client.CreateObject("PowerPoint.Application")
-        ppt_app.Visible = 1
-        presentation = None
+    if platform.system() != "Windows":
+        raise Exception("A conversão para PDF funciona apenas no Windows com PowerPoint instalado.")
 
-        try:
-            if not os.path.exists(pptx_path):
-                raise FileNotFoundError(f"O arquivo {pptx_path} não foi encontrado!")
+    pythoncom.CoInitialize()
+    ppt_app = comtypes.client.CreateObject("PowerPoint.Application")
+    ppt_app.Visible = 1
+    presentation = None
 
-            # Criar caminho temporário para o PDF
-            pdf_path = tempfile.NamedTemporaryFile(suffix=".pdf", delete=False).name
-            presentation = ppt_app.Presentations.Open(pptx_path, WithWindow=False)
-            presentation.SaveAs(pdf_path, 32)  # 32 = Formato PDF
-            return pdf_path
-        finally:
-            if presentation:
-                presentation.Close()
-            ppt_app.Quit()
-    else:
-        # Conversão no Railway com LibreOffice
-        import subprocess
-
-        pdf_path = tempfile.NamedTemporaryFile(suffix=".pdf", delete=False).name
-        output_dir = os.path.dirname(pdf_path)
-
+    try:
         if not os.path.exists(pptx_path):
             raise FileNotFoundError(f"O arquivo {pptx_path} não foi encontrado!")
 
-        # Comando para conversão
-        command = f"libreoffice --headless --convert-to pdf --outdir {output_dir} {pptx_path}"
+        # Criar caminho temporário para o PDF
+        pdf_path = tempfile.NamedTemporaryFile(suffix=".pdf", delete=False).name
+        presentation = ppt_app.Presentations.Open(pptx_path, WithWindow=False)
+        presentation.SaveAs(pdf_path, 32)  # 32 = Formato PDF
+        return pdf_path
+    finally:
+        if presentation:
+            presentation.Close()
+        ppt_app.Quit()
 
-        try:
-            conversion_result = os.system(command)
-
-            if conversion_result != 0:
-                raise Exception(f"Erro ao converter para PDF com LibreOffice. Comando executado: {command}")
-
-            return pdf_path
-        except Exception as e:
-            raise Exception(f"Erro ao converter para PDF com LibreOffice. Detalhes: {e}")
 
 
 @app.route("/", methods=["GET", "POST"])
