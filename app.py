@@ -67,30 +67,46 @@ def adicionar_equipamentos(slide, lista_equipamentos):
 
 def adicionar_objetos_dinamicos(slide, lista_objetos):
     left = Inches(6)
-    top = Inches(3.6)
+    top = Inches(3.2)
     width = Inches(1.5)
     height = Inches(0.5)
     espacamento_vertical = Inches(0.9)
+    limite_caracteres = 40  # Limite de caracteres por linha
 
     for obj in lista_objetos:
         textbox = slide.shapes.add_textbox(left, top, width, height)
         text_frame = textbox.text_frame
-        text_frame.text = obj
-        aplicar_formatacao(text_frame.paragraphs[0])
+        text_frame.word_wrap = False  # Desativa quebra automática
+        text_frame.auto_size = False  # Desativa ajuste automático
+
+        # Quebra o texto em várias linhas, baseado no limite de caracteres
+        linhas = [obj[i:i+limite_caracteres] for i in range(0, len(obj), limite_caracteres)]
+        for linha in linhas:
+            paragraph = text_frame.add_paragraph()
+            paragraph.text = linha
+            aplicar_formatacao(paragraph)
         top += espacamento_vertical
 
 def adicionar_escopo_dinamicos(slide, lista_escopo):
     left = Inches(7.1)
-    top = Inches(3)
+    top = Inches(2.7)
     width = Inches(1.5)
     height = Inches(0.5)
     espacamento_vertical = Inches(0.9)
+    limite_caracteres = 40  # Limite de caracteres por linha
 
     for escopo in lista_escopo:
         textbox = slide.shapes.add_textbox(left, top, width, height)
         text_frame = textbox.text_frame
-        text_frame.text = escopo
-        aplicar_formatacao(text_frame.paragraphs[0])
+        text_frame.word_wrap = False  # Desativa quebra automática
+        text_frame.auto_size = False  # Desativa ajuste automático
+
+        # Quebra o texto em várias linhas, baseado no limite de caracteres
+        linhas = [escopo[i:i+limite_caracteres] for i in range(0, len(escopo), limite_caracteres)]
+        for linha in linhas:
+            paragraph = text_frame.add_paragraph()
+            paragraph.text = linha
+            aplicar_formatacao(paragraph)
         top += espacamento_vertical
 
 def convert_to_pdf(pptx_path):
