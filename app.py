@@ -6,7 +6,7 @@ from flask import Flask, render_template, request, send_file
 from pptx import Presentation
 from pptx.util import Pt, Inches
 from pptx.dml.color import RGBColor
-import subprocess
+import platform  # Para detectar o sistema operacional
 
 app = Flask(__name__)
 app.config["UPLOAD_FOLDER"] = os.path.abspath("files")  # Caminho absoluto
@@ -47,61 +47,21 @@ def adicionar_lista_incremental(slide, marcador, lista):
                         novo_paragraph.text = item
                         aplicar_formatacao(novo_paragraph)
 
-def adicionar_equipamentos(slide, lista_equipamentos):
-    for shape in slide.shapes:
-        if shape.has_text_frame:
-            for paragraph in shape.text_frame.paragraphs:
-                if ":" in paragraph.text:
-                    texto_atual = paragraph.text.strip()
-                    if not texto_atual.endswith(":"):
-                        texto_atual += ":"
-                    paragraph.text = texto_atual
-                    aplicar_formatacao(paragraph)
-
-                    for equipamento in lista_equipamentos:
-                        novo_paragraph = shape.text_frame.add_paragraph()
-                        novo_paragraph.text = equipamento
-                        aplicar_formatacao(novo_paragraph)
-                    return
-
 def adicionar_objetos_dinamicos(slide, lista_objetos):
     left = Inches(6)
     top = Inches(3.2)
     width = Inches(1.5)
     height = Inches(0.5)
     espacamento_vertical = Inches(0.9)
-    limite_caracteres = 32  # Limite de caracteres por linha
+    limite_caracteres = 32
 
     for obj in lista_objetos:
         textbox = slide.shapes.add_textbox(left, top, width, height)
         text_frame = textbox.text_frame
-        text_frame.word_wrap = False  # Desativa quebra automática
-        text_frame.auto_size = False  # Desativa ajuste automático
+        text_frame.word_wrap = False
+        text_frame.auto_size = False
 
-        # Quebra o texto em várias linhas, baseado no limite de caracteres
         linhas = [obj[i:i+limite_caracteres] for i in range(0, len(obj), limite_caracteres)]
-        for linha in linhas:
-            paragraph = text_frame.add_paragraph()
-            paragraph.text = linha
-            aplicar_formatacao(paragraph)
-        top += espacamento_vertical
-
-def adicionar_escopo_dinamicos(slide, lista_escopo):
-    left = Inches(7.1)
-    top = Inches(2.7)
-    width = Inches(1.5)
-    height = Inches(0.5)
-    espacamento_vertical = Inches(0.9)
-    limite_caracteres = 45  # Limite de caracteres por linha
-
-    for escopo in lista_escopo:
-        textbox = slide.shapes.add_textbox(left, top, width, height)
-        text_frame = textbox.text_frame
-        text_frame.word_wrap = False  # Desativa quebra automática
-        text_frame.auto_size = False  # Desativa ajuste automático
-
-        # Quebra o texto em várias linhas, baseado no limite de caracteres
-        linhas = [escopo[i:i+limite_caracteres] for i in range(0, len(escopo), limite_caracteres)]
         for linha in linhas:
             paragraph = text_frame.add_paragraph()
             paragraph.text = linha
@@ -110,22 +70,37 @@ def adicionar_escopo_dinamicos(slide, lista_escopo):
 
 def convert_to_pdf(pptx_path):
     """
-    Converte o arquivo PPTX para PDF usando o LibreOffice.
+    Converte o arquivo PPTX para PDF usando o PowerPoint via COM no Windows
+    ou LibreOffice no Linux (Railway).
     """
-    output_dir = tempfile.mkdtemp()  # Diretório temporário
-    try:
-        # Comando para converter PPTX para PDF
-        subprocess.run(
-            ["libreoffice", "--headless", "--convert-to", "pdf", "--outdir", output_dir, pptx_path],
-            check=True,
-        )
-        # Caminho do PDF convertido
-        pdf_path = os.path.join(output_dir, os.path.basename(pptx_path).replace(".pptx", ".pdf"))
-        if not os.path.exists(pdf_path):
-            raise FileNotFoundError("Erro na conversão para PDF.")
+    if platform.system() == "Windows":
+        # Conversão no Windows com PowerPoint
+        import pythoncom
+        import comtypes.client
+        pythoncom.CoInitialize()
+        ppt_app = comtypes.client.CreateObject("PowerPoint.Application")
+        ppt_app.Visible = 1
+        presentation = None
+
+        try:
+            if not os.path.exists(pptx_path):
+                raise FileNotFoundError(f"O arquivo {pptx_path} não foi encontrado!")
+
+            pdf_path = tempfile.NamedTemporaryFile(suffix=".pdf", delete=False).name
+            presentation = ppt_app.Presentations.Open(pptx_path, WithWindow=False)
+            presentation.SaveAs(pdf_path, 32)
+            return pdf_path
+        finally:
+            if presentation:
+                presentation.Close()
+            ppt_app.Quit()
+    else:
+        # Conversão no Railway com LibreOffice
+        pdf_path = tempfile.NamedTemporaryFile(suffix=".pdf", delete=False).name
+        command = f"libreoffice --headless --convert-to pdf --outdir {os.path.dirname(pdf_path)} {pptx_path}"
+        if os.system(command) != 0:
+            raise Exception("Erro ao converter para PDF com LibreOffice.")
         return pdf_path
-    except subprocess.CalledProcessError as e:
-        raise Exception(f"Erro ao converter para PDF: {e}")
 
 @app.route("/", methods=["GET", "POST"])
 def index():
@@ -140,31 +115,10 @@ def index():
             valor_servico = request.form.get("valor_servico", "")
             valor_mobilizacao = request.form.get("valor_mobilizacao", "")
             objetos = request.form.get("objetos", "").splitlines()
-            escopo = request.form.get("escopo", "").splitlines()
-            campo = request.form.get("campo", "").splitlines()
-            processamento = request.form.get("processamento", "").splitlines()
-            equipamentos = request.form.get("equipamentos", "").splitlines()
-            texto_slide11 = request.form.get("texto_slide11", "")
             action = request.form.get("action")
 
             # Substituir valores nos slides
             substituir_valores_marcadores(prs.slides[1], "{", nome_cliente)
-            substituir_valores_marcadores(prs.slides[10], "{", valor_servico)
-            substituir_valores_marcadores(prs.slides[10], "}", valor_mobilizacao)
-            adicionar_lista_incremental(prs.slides[7], "Campo", campo)
-            adicionar_lista_incremental(prs.slides[7], "Processamento", processamento)
-            adicionar_equipamentos(prs.slides[8], equipamentos)
-            adicionar_objetos_dinamicos(prs.slides[2], objetos)
-            adicionar_escopo_dinamicos(prs.slides[3], escopo)
-
-            if texto_slide11.strip():
-                for shape in prs.slides[11].shapes:
-                    if shape.has_text_frame:
-                        shape.text_frame.clear()
-                        for linha in texto_slide11.split("\n"):
-                            paragraph = shape.text_frame.add_paragraph()
-                            paragraph.text = linha
-                            aplicar_formatacao(paragraph)
 
             # Criar um arquivo PPTX temporário
             with tempfile.NamedTemporaryFile(suffix=".pptx", delete=False) as temp_pptx:
@@ -173,10 +127,7 @@ def index():
 
             # Converter para PDF se necessário
             if action == "pdf":
-                try:
-                    output_path = convert_to_pdf(output_path)
-                except Exception as e:
-                    return f"Erro ao salvar como PDF: {e}"
+                output_path = convert_to_pdf(output_path)
 
             return send_file(output_path, as_attachment=True)
         except Exception as e:
@@ -188,4 +139,4 @@ def index():
 if __name__ == "__main__":
     if not os.path.exists(app.config["UPLOAD_FOLDER"]):
         os.makedirs(app.config["UPLOAD_FOLDER"])
-    app.run(debug=False)
+    app.run(debug=True)
