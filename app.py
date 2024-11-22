@@ -6,8 +6,7 @@ from flask import Flask, render_template, request, send_file
 from pptx import Presentation
 from pptx.util import Pt, Inches
 from pptx.dml.color import RGBColor
-import pythoncom
-import comtypes.client
+import subprocess
 
 app = Flask(__name__)
 app.config["UPLOAD_FOLDER"] = os.path.abspath("files")  # Caminho absoluto
@@ -111,32 +110,22 @@ def adicionar_escopo_dinamicos(slide, lista_escopo):
 
 def convert_to_pdf(pptx_path):
     """
-    Converte o arquivo PPTX para PDF usando o PowerPoint via COM (Windows).
+    Converte o arquivo PPTX para PDF usando o LibreOffice.
     """
-    pythoncom.CoInitialize()
-    ppt_app = comtypes.client.CreateObject("PowerPoint.Application")
-    ppt_app.Visible = 1
-    presentation = None
-
+    output_dir = tempfile.mkdtemp()  # Diretório temporário
     try:
-        if not os.path.exists(pptx_path):
-            raise FileNotFoundError(f"O arquivo {pptx_path} não foi encontrado!")
-
-        # Caminho temporário para o PDF
-        pdf_path = tempfile.NamedTemporaryFile(suffix=".pdf", delete=False).name
-        presentation = ppt_app.Presentations.Open(pptx_path, WithWindow=False)
-
-        # Adicionar tempo para garantir que o PowerPoint carregue tudo
-        time.sleep(2)
-
-        presentation.SaveAs(pdf_path, 32)  # 32 é o formato PDF
+        # Comando para converter PPTX para PDF
+        subprocess.run(
+            ["libreoffice", "--headless", "--convert-to", "pdf", "--outdir", output_dir, pptx_path],
+            check=True,
+        )
+        # Caminho do PDF convertido
+        pdf_path = os.path.join(output_dir, os.path.basename(pptx_path).replace(".pptx", ".pdf"))
+        if not os.path.exists(pdf_path):
+            raise FileNotFoundError("Erro na conversão para PDF.")
         return pdf_path
-    except Exception as e:
+    except subprocess.CalledProcessError as e:
         raise Exception(f"Erro ao converter para PDF: {e}")
-    finally:
-        if presentation:
-            presentation.Close()
-        ppt_app.Quit()
 
 @app.route("/", methods=["GET", "POST"])
 def index():
