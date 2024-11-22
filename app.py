@@ -93,7 +93,7 @@ def adicionar_escopo_dinamicos(slide, lista_escopo):
     width = Inches(1.5)
     height = Inches(0.5)
     espacamento_vertical = Inches(0.9)
-    limite_caracteres = 45 # Limite de caracteres por linha
+    limite_caracteres = 45  # Limite de caracteres por linha
 
     for escopo in lista_escopo:
         textbox = slide.shapes.add_textbox(left, top, width, height)
