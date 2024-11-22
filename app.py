@@ -74,6 +74,10 @@ def convert_to_pdf(pptx_path):
     Converte o arquivo PPTX para PDF usando o PowerPoint via COM no Windows
     ou LibreOffice no Linux (Railway).
     """
+    import platform
+    import tempfile
+    import os
+
     if platform.system() == "Windows":
         # Conversão no Windows com PowerPoint
         import pythoncom
@@ -87,9 +91,10 @@ def convert_to_pdf(pptx_path):
             if not os.path.exists(pptx_path):
                 raise FileNotFoundError(f"O arquivo {pptx_path} não foi encontrado!")
 
+            # Criar caminho temporário para o PDF
             pdf_path = tempfile.NamedTemporaryFile(suffix=".pdf", delete=False).name
             presentation = ppt_app.Presentations.Open(pptx_path, WithWindow=False)
-            presentation.SaveAs(pdf_path, 32)
+            presentation.SaveAs(pdf_path, 32)  # 32 = Formato PDF
             return pdf_path
         finally:
             if presentation:
@@ -97,16 +102,34 @@ def convert_to_pdf(pptx_path):
             ppt_app.Quit()
     else:
         # Conversão no Railway com LibreOffice
-        pdf_path = tempfile.NamedTemporaryFile(suffix=".pdf", delete=False).name
-        output_dir = os.path.dirname(pdf_path)
+        import subprocess
+
+        # Configuração do diretório temporário
+        output_dir = "/tmp"  # Diretório temporário padrão no Railway
+        pdf_name = f"{uuid.uuid4().hex}.pdf"
+        pdf_path = os.path.join(output_dir, pdf_name)
+
+        if not os.path.exists(pptx_path):
+            raise FileNotFoundError(f"O arquivo {pptx_path} não foi encontrado!")
 
         # Comando para conversão
-        command = f"libreoffice --headless --convert-to pdf --outdir {output_dir} {pptx_path}"
-        conversion_result = os.system(command)
+        command = [
+            "libreoffice",
+            "--headless",
+            "--convert-to",
+            "pdf",
+            "--outdir",
+            output_dir,
+            pptx_path,
+        ]
 
-        if conversion_result != 0:
-            raise Exception(f"Erro ao converter para PDF com LibreOffice. Comando executado: {command}")
-        return os.path.join(output_dir, os.path.basename(pdf_path))
+        try:
+            # Executar o comando e verificar o resultado
+            subprocess.run(command, check=True)
+            return pdf_path
+        except subprocess.CalledProcessError as e:
+            raise Exception(f"Erro ao converter para PDF com LibreOffice. Comando executado: {' '.join(command)}")
+
 
 
 @app.route("/", methods=["GET", "POST"])
