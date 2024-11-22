@@ -104,26 +104,31 @@ def convert_to_pdf(pptx_path):
         # Conversão no Railway com LibreOffice
         import subprocess
 
-        pdf_path = tempfile.NamedTemporaryFile(suffix=".pdf", delete=False).name
-        output_dir = os.path.dirname(pdf_path)
+        # Configuração do diretório temporário
+        output_dir = "/tmp"  # Diretório temporário padrão no Railway
+        pdf_name = f"{uuid.uuid4().hex}.pdf"
+        pdf_path = os.path.join(output_dir, pdf_name)
 
         if not os.path.exists(pptx_path):
             raise FileNotFoundError(f"O arquivo {pptx_path} não foi encontrado!")
 
         # Comando para conversão
-        command = f"libreoffice --headless --convert-to pdf --outdir {output_dir} {pptx_path}"
+        command = [
+            "libreoffice",
+            "--headless",
+            "--convert-to",
+            "pdf",
+            "--outdir",
+            output_dir,
+            pptx_path,
+        ]
 
         try:
-            conversion_result = os.system(command)
-
-            if conversion_result != 0:
-                raise Exception(f"Erro ao converter para PDF com LibreOffice. Comando executado: {command}")
-
+            # Executar o comando e verificar o resultado
+            subprocess.run(command, check=True)
             return pdf_path
-        except Exception as e:
-            raise Exception(f"Erro ao converter para PDF com LibreOffice. Detalhes: {e}")
-
-
+        except subprocess.CalledProcessError as e:
+            raise Exception(f"Erro ao converter para PDF com LibreOffice. Comando executado: {' '.join(command)}")
 
 
 @app.route("/", methods=["GET", "POST"])
