@@ -165,6 +165,8 @@ def index():
             if action == "pdf":
                 try:
                     output_path = convert_to_pdf(output_path)
+                    return send_file(output_path, as_attachment=True, download_name="arquivo_convertido.pdf",
+                                     mimetype="application/pdf")
                 except Exception as e:
                     return f"Erro ao salvar como PDF: {e}"
 
