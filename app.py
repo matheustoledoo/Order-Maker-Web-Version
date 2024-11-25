@@ -71,39 +71,30 @@ def adicionar_objetos_dinamicos(slide, lista_objetos):
 
 def convert_to_pdf(pptx_path):
     """
-    Converte o arquivo PPTX para PDF usando o PowerPoint via COM no Windows.
+    Converte o arquivo PPTX para PDF somente no Windows.
     """
-    import pythoncom
-    import comtypes.client
-    import tempfile
-    import os
+    if platform.system() == "Windows":
+        import pythoncom
+        import comtypes.client
+        pythoncom.CoInitialize()
+        ppt_app = comtypes.client.CreateObject("PowerPoint.Application")
+        ppt_app.Visible = 1
+        presentation = None
 
-    # Inicializar o COM para o PowerPoint
-    pythoncom.CoInitialize()
-    ppt_app = comtypes.client.CreateObject("PowerPoint.Application")
-    ppt_app.Visible = 1
-    presentation = None
+        try:
+            if not os.path.exists(pptx_path):
+                raise FileNotFoundError(f"O arquivo {pptx_path} não foi encontrado!")
 
-    try:
-        if not os.path.exists(pptx_path):
-            raise FileNotFoundError(f"O arquivo {pptx_path} não foi encontrado!")
-
-        # Criar um caminho temporário para o PDF
-        pdf_path = tempfile.NamedTemporaryFile(suffix=".pdf", delete=False).name
-
-        # Abrir a apresentação do PowerPoint
-        presentation = ppt_app.Presentations.Open(pptx_path, WithWindow=False)
-
-        # Salvar como PDF
-        presentation.SaveAs(pdf_path, 32)  # 32 = Formato PDF
-        return pdf_path
-    finally:
-        if presentation:
-            presentation.Close()
-        ppt_app.Quit()
-
-
-
+            pdf_path = tempfile.NamedTemporaryFile(suffix=".pdf", delete=False).name
+            presentation = ppt_app.Presentations.Open(pptx_path, WithWindow=False)
+            presentation.SaveAs(pdf_path, 32)  # 32 = Formato PDF
+            return pdf_path
+        finally:
+            if presentation:
+                presentation.Close()
+            ppt_app.Quit()
+    else:
+        raise NotImplementedError("Conversão para PDF não suportada neste ambiente.")
 
 @app.route("/", methods=["GET", "POST"])
 def index():
@@ -116,12 +107,11 @@ def index():
             # Dados do formulário
             nome_cliente = request.form.get("nome_cliente", "")
             valor_servico = request.form.get("valor_servico", "")
-            valor_mobilizacao = request.form.get("valor_mobilizacao", "")
-            objetos = request.form.get("objetos", "").splitlines()
             action = request.form.get("action")
 
             # Substituir valores nos slides
             substituir_valores_marcadores(prs.slides[1], "{", nome_cliente)
+            substituir_valores_marcadores(prs.slides[10], "{", valor_servico)
 
             # Criar um arquivo PPTX temporário
             with tempfile.NamedTemporaryFile(suffix=".pptx", delete=False) as temp_pptx:
@@ -130,7 +120,10 @@ def index():
 
             # Converter para PDF se necessário
             if action == "pdf":
-                output_path = convert_to_pdf(output_path)
+                try:
+                    output_path = convert_to_pdf(output_path)
+                except Exception as e:
+                    return f"Erro ao salvar como PDF: {e}"
 
             return send_file(output_path, as_attachment=True)
         except Exception as e:
