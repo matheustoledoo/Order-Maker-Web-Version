@@ -65,7 +65,7 @@ def adicionar_objetos_dinamicos(slide, lista_objetos):
     top = Inches(3.2)
     width = Inches(5.5)
     height = Inches(0.5)
-    espacamento_vertical = Inches(0.5)  # Espaçamento entre linhas
+    espacamento_vertical = Inches(0.9)  # Espaçamento entre linhas
 
     for obj in lista_objetos:
         if obj.strip():  # Ignora itens vazios
@@ -89,7 +89,7 @@ def adicionar_escopo_dinamicos(slide, lista_escopo):
     top = Inches(2.6)
     width = Inches(6.5)
     height = Inches(0.5)
-    espacamento_vertical = Inches(0.5)  # Espaçamento entre linhas
+    espacamento_vertical = Inches(0.9)  # Espaçamento entre linhas
 
     for escopo in lista_escopo:
         if escopo.strip():  # Ignora itens vazios
