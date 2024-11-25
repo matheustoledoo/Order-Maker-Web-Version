@@ -1,12 +1,12 @@
 import os
 import uuid
 import time
-import tempfile
 from flask import Flask, render_template, request, send_file
 from pptx import Presentation
 from pptx.util import Pt, Inches
 from pptx.dml.color import RGBColor
-import platform  # Para detectar o sistema operacional
+import pythoncom
+import comtypes.client
 
 app = Flask(__name__)
 app.config["UPLOAD_FOLDER"] = os.path.abspath("files")  # Caminho absoluto
@@ -47,13 +47,30 @@ def adicionar_lista_incremental(slide, marcador, lista):
                         novo_paragraph.text = item
                         aplicar_formatacao(novo_paragraph)
 
+def adicionar_equipamentos(slide, lista_equipamentos):
+    for shape in slide.shapes:
+        if shape.has_text_frame:
+            for paragraph in shape.text_frame.paragraphs:
+                if ":" in paragraph.text:
+                    texto_atual = paragraph.text.strip()
+                    if not texto_atual.endswith(":"):
+                        texto_atual += ":"
+                    paragraph.text = texto_atual
+                    aplicar_formatacao(paragraph)
+
+                    for equipamento in lista_equipamentos:
+                        novo_paragraph = shape.text_frame.add_paragraph()
+                        novo_paragraph.text = equipamento
+                        aplicar_formatacao(novo_paragraph)
+                    return
+
 def adicionar_objetos_dinamicos(slide, lista_objetos):
     left = Inches(6)
     top = Inches(3.2)
     width = Inches(1.5)
     height = Inches(0.5)
     espacamento_vertical = Inches(0.9)
-    limite_caracteres = 32
+    limite_caracteres = 40
 
     for obj in lista_objetos:
         textbox = slide.shapes.add_textbox(left, top, width, height)
@@ -68,33 +85,53 @@ def adicionar_objetos_dinamicos(slide, lista_objetos):
             aplicar_formatacao(paragraph)
         top += espacamento_vertical
 
+def adicionar_escopo_dinamicos(slide, lista_escopo):
+    left = Inches(7.1)
+    top = Inches(2.6)
+    width = Inches(1.5)
+    height = Inches(0.5)
+    espacamento_vertical = Inches(0.9)
+    limite_caracteres = 40
+
+    for escopo in lista_escopo:
+        textbox = slide.shapes.add_textbox(left, top, width, height)
+        text_frame = textbox.text_frame
+        text_frame.word_wrap = False
+        text_frame.auto_size = False
+
+        linhas = [escopo[i:i+limite_caracteres] for i in range(0, len(escopo), limite_caracteres)]
+        for linha in linhas:
+            paragraph = text_frame.add_paragraph()
+            paragraph.text = linha
+            aplicar_formatacao(paragraph)
+        top += espacamento_vertical
 
 def convert_to_pdf(pptx_path):
     """
-    Converte o arquivo PPTX para PDF somente no Windows.
+    Converte o arquivo PPTX para PDF usando o PowerPoint via COM (Windows).
     """
-    if platform.system() == "Windows":
-        import pythoncom
-        import comtypes.client
-        pythoncom.CoInitialize()
-        ppt_app = comtypes.client.CreateObject("PowerPoint.Application")
-        ppt_app.Visible = 1
-        presentation = None
+    pythoncom.CoInitialize()
+    ppt_app = comtypes.client.CreateObject("PowerPoint.Application")
+    ppt_app.Visible = 1
+    presentation = None
 
-        try:
-            if not os.path.exists(pptx_path):
-                raise FileNotFoundError(f"O arquivo {pptx_path} não foi encontrado!")
+    try:
+        if not os.path.exists(pptx_path):
+            raise FileNotFoundError(f"O arquivo {pptx_path} não foi encontrado!")
 
-            pdf_path = tempfile.NamedTemporaryFile(suffix=".pdf", delete=False).name
-            presentation = ppt_app.Presentations.Open(pptx_path, WithWindow=False)
-            presentation.SaveAs(pdf_path, 32)  # 32 = Formato PDF
-            return pdf_path
-        finally:
-            if presentation:
-                presentation.Close()
-            ppt_app.Quit()
-    else:
-        raise NotImplementedError("Conversão para PDF não suportada neste ambiente.")
+        pdf_path = os.path.splitext(pptx_path)[0] + ".pdf"
+        presentation = ppt_app.Presentations.Open(pptx_path, WithWindow=False)
+
+        time.sleep(2)
+
+        presentation.SaveAs(pdf_path, 32)  # 32 é o formato PDF
+        return pdf_path
+    except Exception as e:
+        raise Exception(f"Erro ao converter para PDF: {e}")
+    finally:
+        if presentation:
+            presentation.Close()
+        ppt_app.Quit()
 
 @app.route("/", methods=["GET", "POST"])
 def index():
@@ -104,21 +141,38 @@ def index():
             caminho_arquivo = os.path.join(app.config["UPLOAD_FOLDER"], arquivo)
             prs = Presentation(caminho_arquivo)
 
-            # Dados do formulário
             nome_cliente = request.form.get("nome_cliente", "")
             valor_servico = request.form.get("valor_servico", "")
+            valor_mobilizacao = request.form.get("valor_mobilizacao", "")
+            objetos = request.form.get("objetos", "").splitlines()
+            escopo = request.form.get("escopo", "").splitlines()
+            campo = request.form.get("campo", "").splitlines()
+            processamento = request.form.get("processamento", "").splitlines()
+            equipamentos = request.form.get("equipamentos", "").splitlines()
+            texto_slide11 = request.form.get("texto_slide11", "")
             action = request.form.get("action")
 
-            # Substituir valores nos slides
             substituir_valores_marcadores(prs.slides[1], "{", nome_cliente)
             substituir_valores_marcadores(prs.slides[10], "{", valor_servico)
+            substituir_valores_marcadores(prs.slides[10], "}", valor_mobilizacao)
+            adicionar_lista_incremental(prs.slides[7], "Campo", campo)
+            adicionar_lista_incremental(prs.slides[7], "Processamento", processamento)
+            adicionar_equipamentos(prs.slides[8], equipamentos)
+            adicionar_objetos_dinamicos(prs.slides[2], objetos)
+            adicionar_escopo_dinamicos(prs.slides[3], escopo)
 
-            # Criar um arquivo PPTX temporário
-            with tempfile.NamedTemporaryFile(suffix=".pptx", delete=False) as temp_pptx:
-                prs.save(temp_pptx.name)
-                output_path = temp_pptx.name
+            if texto_slide11.strip():
+                for shape in prs.slides[11].shapes:
+                    if shape.has_text_frame:
+                        shape.text_frame.clear()
+                        for linha in texto_slide11.split("\n"):
+                            paragraph = shape.text_frame.add_paragraph()
+                            paragraph.text = linha
+                            aplicar_formatacao(paragraph)
 
-            # Converter para PDF se necessário
+            output_path = os.path.abspath(os.path.join(app.config["UPLOAD_FOLDER"], f"editado_{uuid.uuid4().hex}.pptx"))
+            prs.save(output_path)
+
             if action == "pdf":
                 try:
                     output_path = convert_to_pdf(output_path)
