@@ -107,8 +107,7 @@ def convert_to_pdf(pptx_path):
     pdf.set_auto_page_break(auto=True, margin=15)
 
     # Usar uma fonte compatível com Unicode
-    pdf.add_font('Codec Pro', '', uni=True)
-    pdf.set_font('Codec Pro', '', 12)
+    pdf.set_font("Arial", size=24)
 
     for slide in prs.slides:
         pdf.add_page()
