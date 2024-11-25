@@ -24,19 +24,19 @@ def aplicar_formatacao(paragraph, fonte="Codec Pro", tamanho=24, cor=(0, 0, 0)):
 
 def substituir_valores_marcadores(slide, marcador, valor):
     for shape in slide.shapes:
-        if not shape.has_text_frame:
+        if not shape.has_text_frame or not isinstance(marcador, str):
             continue
         for paragraph in shape.text_frame.paragraphs:
-            if isinstance(paragraph.text, str) and marcador in paragraph.text:
+            if marcador in paragraph.text:
                 paragraph.text = paragraph.text.replace(marcador, valor)
                 aplicar_formatacao(paragraph)
 
 def adicionar_lista_incremental(slide, marcador, lista):
     for shape in slide.shapes:
-        if not shape.has_text_frame:
+        if not shape.has_text_frame or not isinstance(marcador, str):
             continue
         for paragraph in shape.text_frame.paragraphs:
-            if isinstance(paragraph.text, str) and marcador in paragraph.text:
+            if marcador in paragraph.text:
                 paragraph.text = marcador
                 aplicar_formatacao(paragraph)
                 for item in lista:
@@ -49,7 +49,7 @@ def adicionar_equipamentos(slide, lista_equipamentos):
         if not shape.has_text_frame:
             continue
         for paragraph in shape.text_frame.paragraphs:
-            if isinstance(paragraph.text, str) and ":" in paragraph.text:
+            if ":" in paragraph.text:
                 paragraph.text += ":"
                 aplicar_formatacao(paragraph)
                 for equipamento in lista_equipamentos:
@@ -70,7 +70,6 @@ def adicionar_objetos_dinamicos(slide, lista_objetos):
         textbox = slide.shapes.add_textbox(left, top, width, height)
         text_frame = textbox.text_frame
         text_frame.word_wrap = True
-        text_frame.auto_size = True
 
         linhas = [obj[i:i + limite_caracteres] for i in range(0, len(obj), limite_caracteres)]
         for linha in linhas:
@@ -91,7 +90,6 @@ def adicionar_escopo_dinamicos(slide, lista_escopo):
         textbox = slide.shapes.add_textbox(left, top, width, height)
         text_frame = textbox.text_frame
         text_frame.word_wrap = True
-        text_frame.auto_size = True
 
         linhas = [escopo[i:i + limite_caracteres] for i in range(0, len(escopo), limite_caracteres)]
         for linha in linhas:
@@ -114,10 +112,9 @@ def convert_to_pdf(pptx_path):
 
         # Adicionar o texto do slide
         for shape in slide.shapes:
-            if shape.has_text_frame:
+            if shape.has_text_frame and shape.text_frame.text.strip():
                 text = shape.text_frame.text
-                if text.strip():
-                    pdf.multi_cell(0, 10, text)
+                pdf.multi_cell(0, 10, text)
 
     pdf_path = os.path.splitext(pptx_path)[0] + ".pdf"
     pdf.output(pdf_path)
