@@ -131,20 +131,36 @@ def index():
         try:
             arquivo = request.form["arquivo"]
             caminho_arquivo = os.path.join(app.config["UPLOAD_FOLDER"], arquivo)
-
-            if not allowed_file(arquivo):
-                return "Arquivo inválido."
-
             prs = Presentation(caminho_arquivo)
 
             nome_cliente = request.form.get("nome_cliente", "")
             valor_servico = request.form.get("valor_servico", "")
             valor_mobilizacao = request.form.get("valor_mobilizacao", "")
+            objetos = request.form.get("objetos", "").splitlines()
+            escopo = request.form.get("escopo", "").splitlines()
+            campo = request.form.get("campo", "").splitlines()
+            processamento = request.form.get("processamento", "").splitlines()
+            equipamentos = request.form.get("equipamentos", "").splitlines()
+            texto_slide11 = request.form.get("texto_slide11", "")
             action = request.form.get("action")
 
             substituir_valores_marcadores(prs.slides[1], "{", nome_cliente)
             substituir_valores_marcadores(prs.slides[10], "{", valor_servico)
             substituir_valores_marcadores(prs.slides[10], "}", valor_mobilizacao)
+            adicionar_lista_incremental(prs.slides[7], "Campo", campo)
+            adicionar_lista_incremental(prs.slides[7], "Processamento", processamento)
+            adicionar_equipamentos(prs.slides[8], equipamentos)
+            adicionar_objetos_dinamicos(prs.slides[2], objetos)
+            adicionar_escopo_dinamicos(prs.slides[3], escopo)
+
+            if texto_slide11.strip():
+                for shape in prs.slides[11].shapes:
+                    if shape.has_text_frame:
+                        shape.text_frame.clear()
+                        for linha in texto_slide11.split("\n"):
+                            paragraph = shape.text_frame.add_paragraph()
+                            paragraph.text = linha
+                            aplicar_formatacao(paragraph)
 
             # Salvar arquivo temporário PPTX
             output_path = os.path.abspath(os.path.join(app.config["UPLOAD_FOLDER"], f"editado_{uuid.uuid4().hex}.pptx"))
