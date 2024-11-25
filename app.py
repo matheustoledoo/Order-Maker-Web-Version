@@ -1,26 +1,27 @@
 import os
 import uuid
-import time
 from flask import Flask, render_template, request, send_file
 from pptx import Presentation
 from pptx.util import Pt, Inches
 from pptx.dml.color import RGBColor
-import pythoncom
-import comtypes.client
+import subprocess
 
 app = Flask(__name__)
 app.config["UPLOAD_FOLDER"] = os.path.abspath("files")  # Caminho absoluto
 app.config["ALLOWED_EXTENSIONS"] = {"pptx"}
 
+
 # Funções auxiliares
 def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in app.config["ALLOWED_EXTENSIONS"]
+
 
 def aplicar_formatacao(paragraph, fonte="Codec Pro", tamanho=24, cor=(0, 0, 0)):
     for run in paragraph.runs:
         run.font.name = fonte
         run.font.size = Pt(tamanho)
         run.font.color.rgb = RGBColor(*cor)
+
 
 def substituir_valores_marcadores(slide, marcador, valor):
     for shape in slide.shapes:
@@ -29,6 +30,7 @@ def substituir_valores_marcadores(slide, marcador, valor):
                 if marcador in paragraph.text:
                     paragraph.text = paragraph.text.replace(marcador, valor)
                     aplicar_formatacao(paragraph)
+
 
 def adicionar_lista_incremental(slide, marcador, lista):
     for shape in slide.shapes:
@@ -47,91 +49,25 @@ def adicionar_lista_incremental(slide, marcador, lista):
                         novo_paragraph.text = item
                         aplicar_formatacao(novo_paragraph)
 
-def adicionar_equipamentos(slide, lista_equipamentos):
-    for shape in slide.shapes:
-        if shape.has_text_frame:
-            for paragraph in shape.text_frame.paragraphs:
-                if ":" in paragraph.text:
-                    texto_atual = paragraph.text.strip()
-                    if not texto_atual.endswith(":"):
-                        texto_atual += ":"
-                    paragraph.text = texto_atual
-                    aplicar_formatacao(paragraph)
-
-                    for equipamento in lista_equipamentos:
-                        novo_paragraph = shape.text_frame.add_paragraph()
-                        novo_paragraph.text = equipamento
-                        aplicar_formatacao(novo_paragraph)
-                    return
-
-def adicionar_objetos_dinamicos(slide, lista_objetos):
-    left = Inches(6)
-    top = Inches(3.2)
-    width = Inches(1.5)
-    height = Inches(0.5)
-    espacamento_vertical = Inches(0.9)
-    limite_caracteres = 40
-
-    for obj in lista_objetos:
-        textbox = slide.shapes.add_textbox(left, top, width, height)
-        text_frame = textbox.text_frame
-        text_frame.word_wrap = True
-        text_frame.auto_size = True
-
-        linhas = [obj[i:i+limite_caracteres] for i in range(0, len(obj), limite_caracteres)]
-        for linha in linhas:
-            paragraph = text_frame.add_paragraph()
-            paragraph.text = linha
-            aplicar_formatacao(paragraph)
-        top += espacamento_vertical
-
-def adicionar_escopo_dinamicos(slide, lista_escopo):
-    left = Inches(7.1)
-    top = Inches(2.6)
-    width = Inches(1.5)
-    height = Inches(0.5)
-    espacamento_vertical = Inches(0.9)
-    limite_caracteres = 40
-
-    for escopo in lista_escopo:
-        textbox = slide.shapes.add_textbox(left, top, width, height)
-        text_frame = textbox.text_frame
-        text_frame.word_wrap = True
-        text_frame.auto_size = True
-
-        linhas = [escopo[i:i+limite_caracteres] for i in range(0, len(escopo), limite_caracteres)]
-        for linha in linhas:
-            paragraph = text_frame.add_paragraph()
-            paragraph.text = linha
-            aplicar_formatacao(paragraph)
-        top += espacamento_vertical
 
 def convert_to_pdf(pptx_path):
     """
-    Converte o arquivo PPTX para PDF usando o PowerPoint via COM (Windows).
+    Converte o arquivo PPTX para PDF usando LibreOffice via unoconv.
     """
-    pythoncom.CoInitialize()
-    ppt_app = comtypes.client.CreateObject("PowerPoint.Application")
-    ppt_app.Visible = 1
-    presentation = None
+    if not os.path.exists(pptx_path):
+        raise FileNotFoundError(f"O arquivo {pptx_path} não foi encontrado!")
+
+    pdf_path = os.path.splitext(pptx_path)[0] + ".pdf"
 
     try:
-        if not os.path.exists(pptx_path):
-            raise FileNotFoundError(f"O arquivo {pptx_path} não foi encontrado!")
-
-        pdf_path = os.path.splitext(pptx_path)[0] + ".pdf"
-        presentation = ppt_app.Presentations.Open(pptx_path, WithWindow=False)
-
-        time.sleep(2)
-
-        presentation.SaveAs(pdf_path, 32)  # 32 é o formato PDF
+        # Comando para converter PPTX para PDF
+        subprocess.run(
+            ["libreoffice", "--headless", "--convert-to", "pdf", pptx_path, "--outdir", app.config["UPLOAD_FOLDER"]],
+            check=True)
         return pdf_path
-    except Exception as e:
+    except subprocess.CalledProcessError as e:
         raise Exception(f"Erro ao converter para PDF: {e}")
-    finally:
-        if presentation:
-            presentation.Close()
-        ppt_app.Quit()
+
 
 @app.route("/", methods=["GET", "POST"])
 def index():
@@ -157,9 +93,6 @@ def index():
             substituir_valores_marcadores(prs.slides[10], "}", valor_mobilizacao)
             adicionar_lista_incremental(prs.slides[7], "Campo", campo)
             adicionar_lista_incremental(prs.slides[7], "Processamento", processamento)
-            adicionar_equipamentos(prs.slides[8], equipamentos)
-            adicionar_objetos_dinamicos(prs.slides[2], objetos)
-            adicionar_escopo_dinamicos(prs.slides[3], escopo)
 
             if texto_slide11.strip():
                 for shape in prs.slides[11].shapes:
@@ -185,6 +118,7 @@ def index():
 
     arquivos = [f for f in os.listdir(app.config["UPLOAD_FOLDER"]) if allowed_file(f)]
     return render_template("index.html", arquivos=arquivos)
+
 
 if __name__ == "__main__":
     if not os.path.exists(app.config["UPLOAD_FOLDER"]):
