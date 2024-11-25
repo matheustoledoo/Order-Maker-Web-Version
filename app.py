@@ -63,7 +63,7 @@ def adicionar_equipamentos(slide, lista_equipamentos):
 def adicionar_objetos_dinamicos(slide, lista_objetos):
     left = Inches(6)
     top = Inches(3.2)
-    width = Inches(1.5)
+    width = Inches(5.5)
     height = Inches(0.5)
     espacamento_vertical = Inches(0.5)  # Espaçamento entre linhas
 
@@ -87,7 +87,7 @@ def adicionar_objetos_dinamicos(slide, lista_objetos):
 def adicionar_escopo_dinamicos(slide, lista_escopo):
     left = Inches(7.1)
     top = Inches(2.6)
-    width = Inches(1.5)
+    width = Inches(6.5)
     height = Inches(0.5)
     espacamento_vertical = Inches(0.5)  # Espaçamento entre linhas
 
