@@ -10,18 +10,16 @@ app = Flask(__name__)
 app.config["UPLOAD_FOLDER"] = os.path.abspath("files")  # Caminho absoluto
 app.config["ALLOWED_EXTENSIONS"] = {"pptx"}
 
-
 # Funções auxiliares
 def allowed_file(filename):
-    return "." in filename and filename.rsplit(".", 1)[1].lower() in app.config["ALLOWED_EXTENSIONS"]
-
+    # Corrigido para garantir que o tipo do nome seja compatível
+    return isinstance(filename, str) and "." in filename and filename.rsplit(".", 1)[1].lower() in app.config["ALLOWED_EXTENSIONS"]
 
 def aplicar_formatacao(paragraph, fonte="Codec Pro", tamanho=24, cor=(0, 0, 0)):
     for run in paragraph.runs:
         run.font.name = fonte
         run.font.size = Pt(tamanho)
         run.font.color.rgb = RGBColor(*cor)
-
 
 def substituir_valores_marcadores(slide, marcador, valor):
     for shape in slide.shapes:
@@ -31,12 +29,11 @@ def substituir_valores_marcadores(slide, marcador, valor):
                     paragraph.text = paragraph.text.replace(marcador, valor)
                     aplicar_formatacao(paragraph)
 
-
 def adicionar_lista_incremental(slide, marcador, lista):
     for shape in slide.shapes:
         if shape.has_text_frame:
             for paragraph in shape.text_frame.paragraphs:
-                if marcador in paragraph.text:
+                if isinstance(paragraph.text, str) and marcador in paragraph.text:
                     texto_atual = paragraph.text.strip()
                     if texto_atual != marcador:
                         paragraph.text = texto_atual
@@ -49,12 +46,11 @@ def adicionar_lista_incremental(slide, marcador, lista):
                         novo_paragraph.text = item
                         aplicar_formatacao(novo_paragraph)
 
-
 def adicionar_equipamentos(slide, lista_equipamentos):
     for shape in slide.shapes:
         if shape.has_text_frame:
             for paragraph in shape.text_frame.paragraphs:
-                if ":" in paragraph.text:
+                if isinstance(paragraph.text, str) and ":" in paragraph.text:
                     texto_atual = paragraph.text.strip()
                     if not texto_atual.endswith(":"):
                         texto_atual += ":"
@@ -66,7 +62,6 @@ def adicionar_equipamentos(slide, lista_equipamentos):
                         novo_paragraph.text = equipamento
                         aplicar_formatacao(novo_paragraph)
                     return
-
 
 def adicionar_objetos_dinamicos(slide, lista_objetos):
     left = Inches(6)
@@ -89,7 +84,6 @@ def adicionar_objetos_dinamicos(slide, lista_objetos):
             aplicar_formatacao(paragraph)
         top += espacamento_vertical
 
-
 def adicionar_escopo_dinamicos(slide, lista_escopo):
     left = Inches(7.1)
     top = Inches(2.6)
@@ -111,7 +105,6 @@ def adicionar_escopo_dinamicos(slide, lista_escopo):
             aplicar_formatacao(paragraph)
         top += espacamento_vertical
 
-
 def convert_to_pdf(pptx_path):
     """
     Converte o arquivo PPTX para PDF usando FPDF.
@@ -124,17 +117,14 @@ def convert_to_pdf(pptx_path):
         pdf.add_page()
         pdf.set_font("Arial", size=12)
 
-        # Adicionar o título do slide (se existir)
         for shape in slide.shapes:
             if shape.has_text_frame:
                 text = shape.text_frame.text
                 pdf.multi_cell(0, 10, text)
 
-    # Salvar o PDF no mesmo local do PPTX
     pdf_path = os.path.splitext(pptx_path)[0] + ".pdf"
     pdf.output(pdf_path)
     return pdf_path
-
 
 @app.route("/", methods=["GET", "POST"])
 def index():
@@ -188,7 +178,6 @@ def index():
 
     arquivos = [f for f in os.listdir(app.config["UPLOAD_FOLDER"]) if allowed_file(f)]
     return render_template("index.html", arquivos=arquivos)
-
 
 if __name__ == "__main__":
     if not os.path.exists(app.config["UPLOAD_FOLDER"]):
