@@ -65,43 +65,47 @@ def adicionar_objetos_dinamicos(slide, lista_objetos):
     top = Inches(3.2)
     width = Inches(1.5)
     height = Inches(0.5)
-    espacamento_vertical = Inches(0.9)
-    limite_caracteres = 40
+    espacamento_vertical = Inches(0.5)  # Espaçamento entre linhas
 
     for obj in lista_objetos:
-        textbox = slide.shapes.add_textbox(left, top, width, height)
-        text_frame = textbox.text_frame
-        text_frame.word_wrap = False
-        text_frame.auto_size = False
+        if obj.strip():  # Ignora itens vazios
+            # Adiciona uma única caixa de texto
+            textbox = slide.shapes.add_textbox(left, top, width, height)
+            text_frame = textbox.text_frame
+            text_frame.word_wrap = True
 
-        linhas = [obj[i:i+limite_caracteres] for i in range(0, len(obj), limite_caracteres)]
-        for linha in linhas:
-            paragraph = text_frame.add_paragraph()
-            paragraph.text = linha
-            aplicar_formatacao(paragraph)
-        top += espacamento_vertical
+            # Adiciona o texto respeitando apenas quebras de linha explícitas
+            for linha in obj.split("\n"):  # Divide apenas no \n (Enter)
+                paragraph = text_frame.add_paragraph()
+                paragraph.text = linha.strip()
+                aplicar_formatacao(paragraph)
+
+            # Ajusta a posição vertical para o próximo item da lista
+            top += espacamento_vertical
+
 
 def adicionar_escopo_dinamicos(slide, lista_escopo):
     left = Inches(7.1)
     top = Inches(2.6)
     width = Inches(1.5)
     height = Inches(0.5)
-    espacamento_vertical = Inches(0.9)
-    limite_caracteres = 40
+    espacamento_vertical = Inches(0.5)  # Espaçamento entre linhas
 
     for escopo in lista_escopo:
-        textbox = slide.shapes.add_textbox(left, top, width, height)
-        text_frame = textbox.text_frame
-        text_frame.word_wrap = False
-        text_frame.auto_size = False
+        if escopo.strip():  # Ignora itens vazios
+            # Adiciona uma única caixa de texto
+            textbox = slide.shapes.add_textbox(left, top, width, height)
+            text_frame = textbox.text_frame
+            text_frame.word_wrap = True
 
-        linhas = [escopo[i:i+limite_caracteres] for i in range(0, len(escopo), limite_caracteres)]
-        for linha in linhas:
-            paragraph = text_frame.add_paragraph()
-            paragraph.text = linha
-            aplicar_formatacao(paragraph)
-        top += espacamento_vertical
+            # Adiciona o texto respeitando apenas quebras de linha explícitas
+            for linha in escopo.split("\n"):  # Divide apenas no \n (Enter)
+                paragraph = text_frame.add_paragraph()
+                paragraph.text = linha.strip()
+                aplicar_formatacao(paragraph)
 
+            # Ajusta a posição vertical para o próximo item da lista
+            top += espacamento_vertical
 
 
 def convert_to_pdf(pptx_path):
