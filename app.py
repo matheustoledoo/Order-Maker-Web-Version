@@ -75,8 +75,8 @@ def adicionar_objetos_dinamicos(slide, lista_objetos):
     for obj in lista_objetos:
         textbox = slide.shapes.add_textbox(left, top, width, height)
         text_frame = textbox.text_frame
-        text_frame.word_wrap = False
-        text_frame.auto_size = False
+        text_frame.word_wrap = True
+        text_frame.auto_size = True
 
         linhas = [obj[i:i+limite_caracteres] for i in range(0, len(obj), limite_caracteres)]
         for linha in linhas:
@@ -96,8 +96,8 @@ def adicionar_escopo_dinamicos(slide, lista_escopo):
     for escopo in lista_escopo:
         textbox = slide.shapes.add_textbox(left, top, width, height)
         text_frame = textbox.text_frame
-        text_frame.word_wrap = False
-        text_frame.auto_size = False
+        text_frame.word_wrap = True
+        text_frame.auto_size = True
 
         linhas = [escopo[i:i+limite_caracteres] for i in range(0, len(escopo), limite_caracteres)]
         for linha in linhas:

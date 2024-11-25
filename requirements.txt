@@ -1,4 +1,5 @@
 Flask
+fpdf
+Pillow
 python-pptx
-comtypes
-pywin32
+gunicorn
