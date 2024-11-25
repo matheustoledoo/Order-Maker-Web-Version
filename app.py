@@ -6,6 +6,7 @@ from pptx.util import Pt, Inches
 from pptx.dml.color import RGBColor
 import subprocess
 
+
 app = Flask(__name__)
 app.config["UPLOAD_FOLDER"] = os.path.abspath("files")  # Caminho absoluto
 app.config["ALLOWED_EXTENSIONS"] = {"pptx"}
@@ -49,24 +50,89 @@ def adicionar_lista_incremental(slide, marcador, lista):
                         novo_paragraph.text = item
                         aplicar_formatacao(novo_paragraph)
 
+def adicionar_equipamentos(slide, lista_equipamentos):
+    for shape in slide.shapes:
+        if shape.has_text_frame:
+            for paragraph in shape.text_frame.paragraphs:
+                if ":" in paragraph.text:
+                    texto_atual = paragraph.text.strip()
+                    if not texto_atual.endswith(":"):
+                        texto_atual += ":"
+                    paragraph.text = texto_atual
+                    aplicar_formatacao(paragraph)
+
+                    for equipamento in lista_equipamentos:
+                        novo_paragraph = shape.text_frame.add_paragraph()
+                        novo_paragraph.text = equipamento
+                        aplicar_formatacao(novo_paragraph)
+                    return
+
+def adicionar_objetos_dinamicos(slide, lista_objetos):
+    left = Inches(6)
+    top = Inches(3.2)
+    width = Inches(1.5)
+    height = Inches(0.5)
+    espacamento_vertical = Inches(0.9)
+    limite_caracteres = 40
+
+    for obj in lista_objetos:
+        textbox = slide.shapes.add_textbox(left, top, width, height)
+        text_frame = textbox.text_frame
+        text_frame.word_wrap = False
+        text_frame.auto_size = False
+
+        linhas = [obj[i:i+limite_caracteres] for i in range(0, len(obj), limite_caracteres)]
+        for linha in linhas:
+            paragraph = text_frame.add_paragraph()
+            paragraph.text = linha
+            aplicar_formatacao(paragraph)
+        top += espacamento_vertical
+
+def adicionar_escopo_dinamicos(slide, lista_escopo):
+    left = Inches(7.1)
+    top = Inches(2.6)
+    width = Inches(1.5)
+    height = Inches(0.5)
+    espacamento_vertical = Inches(0.9)
+    limite_caracteres = 40
+
+    for escopo in lista_escopo:
+        textbox = slide.shapes.add_textbox(left, top, width, height)
+        text_frame = textbox.text_frame
+        text_frame.word_wrap = False
+        text_frame.auto_size = False
+
+        linhas = [escopo[i:i+limite_caracteres] for i in range(0, len(escopo), limite_caracteres)]
+        for linha in linhas:
+            paragraph = text_frame.add_paragraph()
+            paragraph.text = linha
+            aplicar_formatacao(paragraph)
+        top += espacamento_vertical
+
+from fpdf import FPDF
 
 def convert_to_pdf(pptx_path):
     """
     Converte o arquivo PPTX para PDF usando LibreOffice via unoconv.
     """
-    if not os.path.exists(pptx_path):
-        raise FileNotFoundError(f"O arquivo {pptx_path} não foi encontrado!")
+    prs = Presentation(pptx_path)
+    pdf = FPDF()
+    pdf.set_auto_page_break(auto=True, margin=15)
 
+    for slide in prs.slides:
+        pdf.add_page()
+        pdf.set_font("Arial", size=12)
+
+        # Adicionar o título do slide (se existir)
+        for shape in slide.shapes:
+            if shape.has_text_frame:
+                text = shape.text_frame.text
+                pdf.multi_cell(0, 10, text)
+
+    # Salvar o PDF no mesmo local do PPTX
     pdf_path = os.path.splitext(pptx_path)[0] + ".pdf"
-
-    try:
-        # Comando para converter PPTX para PDF
-        subprocess.run(
-            ["libreoffice", "--headless", "--convert-to", "pdf", pptx_path, "--outdir", app.config["UPLOAD_FOLDER"]],
-            check=True)
-        return pdf_path
-    except subprocess.CalledProcessError as e:
-        raise Exception(f"Erro ao converter para PDF: {e}")
+    pdf.output(pdf_path)
+    return pdf_path
 
 
 @app.route("/", methods=["GET", "POST"])
@@ -93,6 +159,9 @@ def index():
             substituir_valores_marcadores(prs.slides[10], "}", valor_mobilizacao)
             adicionar_lista_incremental(prs.slides[7], "Campo", campo)
             adicionar_lista_incremental(prs.slides[7], "Processamento", processamento)
+            adicionar_equipamentos(prs.slides[8], equipamentos)
+            adicionar_objetos_dinamicos(prs.slides[2], objetos)
+            adicionar_escopo_dinamicos(prs.slides[3], escopo)
 
             if texto_slide11.strip():
                 for shape in prs.slides[11].shapes:
