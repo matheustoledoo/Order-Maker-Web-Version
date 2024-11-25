@@ -16,27 +16,25 @@ def allowed_file(filename):
     return isinstance(filename, str) and "." in filename and filename.rsplit(".", 1)[1].lower() in app.config["ALLOWED_EXTENSIONS"]
 
 def aplicar_formatacao(paragraph, fonte="Codec Pro", tamanho=24, cor=(0, 0, 0)):
-    # Formatação de texto no PowerPoint
-    for run in paragraph.runs:
-        run.font.name = fonte
-        run.font.size = Pt(tamanho)
-        run.font.color.rgb = RGBColor(*cor)
+    if paragraph.runs:
+        for run in paragraph.runs:
+            run.font.name = fonte
+            run.font.size = Pt(tamanho)
+            run.font.color.rgb = RGBColor(*cor)
 
 def substituir_valores_marcadores(slide, marcador, valor):
-    # Substitui marcadores nos slides
     for shape in slide.shapes:
-        if shape.has_text_frame:
+        if shape.has_text_frame and isinstance(shape.text_frame.text, str):
             for paragraph in shape.text_frame.paragraphs:
-                if isinstance(paragraph.text, str) and marcador in paragraph.text:
+                if marcador in paragraph.text:
                     paragraph.text = paragraph.text.replace(marcador, valor)
                     aplicar_formatacao(paragraph)
 
 def adicionar_lista_incremental(slide, marcador, lista):
-    # Adiciona listas incrementais
     for shape in slide.shapes:
-        if shape.has_text_frame:
+        if shape.has_text_frame and isinstance(shape.text_frame.text, str):
             for paragraph in shape.text_frame.paragraphs:
-                if isinstance(paragraph.text, str) and marcador in paragraph.text:
+                if marcador in paragraph.text:
                     paragraph.text = marcador
                     aplicar_formatacao(paragraph)
 
@@ -46,11 +44,10 @@ def adicionar_lista_incremental(slide, marcador, lista):
                         aplicar_formatacao(novo_paragraph)
 
 def adicionar_equipamentos(slide, lista_equipamentos):
-    # Adiciona equipamentos ao slide
     for shape in slide.shapes:
-        if shape.has_text_frame:
+        if shape.has_text_frame and isinstance(shape.text_frame.text, str):
             for paragraph in shape.text_frame.paragraphs:
-                if isinstance(paragraph.text, str) and ":" in paragraph.text:
+                if ":" in paragraph.text:
                     paragraph.text += ":"
                     aplicar_formatacao(paragraph)
 
@@ -61,7 +58,6 @@ def adicionar_equipamentos(slide, lista_equipamentos):
                     return
 
 def adicionar_objetos_dinamicos(slide, lista_objetos):
-    # Adiciona objetos dinamicamente
     left = Inches(6)
     top = Inches(3.2)
     width = Inches(1.5)
@@ -83,7 +79,6 @@ def adicionar_objetos_dinamicos(slide, lista_objetos):
         top += espacamento_vertical
 
 def adicionar_escopo_dinamicos(slide, lista_escopo):
-    # Adiciona escopo dinamicamente
     left = Inches(7.1)
     top = Inches(2.6)
     width = Inches(1.5)
@@ -105,7 +100,6 @@ def adicionar_escopo_dinamicos(slide, lista_escopo):
         top += espacamento_vertical
 
 def convert_to_pdf(pptx_path):
-    # Converte o arquivo PPTX para PDF
     prs = Presentation(pptx_path)
     pdf = FPDF()
     pdf.set_auto_page_break(auto=True, margin=15)
@@ -115,7 +109,7 @@ def convert_to_pdf(pptx_path):
         pdf.set_font("Arial", size=12)
 
         for shape in slide.shapes:
-            if shape.has_text_frame:
+            if shape.has_text_frame and isinstance(shape.text_frame.text, str):
                 text = shape.text_frame.text
                 pdf.multi_cell(0, 10, text)
 
