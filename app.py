@@ -12,19 +12,17 @@ app.config["ALLOWED_EXTENSIONS"] = {"pptx"}
 
 # Funções auxiliares
 def allowed_file(filename):
-    # Verifica se o nome do arquivo é string e contém uma extensão válida
-    return isinstance(filename, str) and "." in filename and filename.rsplit(".", 1)[1].lower() in app.config["ALLOWED_EXTENSIONS"]
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in app.config["ALLOWED_EXTENSIONS"]
 
 def aplicar_formatacao(paragraph, fonte="Codec Pro", tamanho=24, cor=(0, 0, 0)):
-    if paragraph.runs:
-        for run in paragraph.runs:
-            run.font.name = fonte
-            run.font.size = Pt(tamanho)
-            run.font.color.rgb = RGBColor(*cor)
+    for run in paragraph.runs:
+        run.font.name = fonte
+        run.font.size = Pt(tamanho)
+        run.font.color.rgb = RGBColor(*cor)
 
 def substituir_valores_marcadores(slide, marcador, valor):
     for shape in slide.shapes:
-        if shape.has_text_frame and isinstance(shape.text_frame.text, str):
+        if shape.has_text_frame:
             for paragraph in shape.text_frame.paragraphs:
                 if marcador in paragraph.text:
                     paragraph.text = paragraph.text.replace(marcador, valor)
@@ -32,7 +30,7 @@ def substituir_valores_marcadores(slide, marcador, valor):
 
 def adicionar_lista_incremental(slide, marcador, lista):
     for shape in slide.shapes:
-        if shape.has_text_frame and isinstance(shape.text_frame.text, str):
+        if shape.has_text_frame:
             for paragraph in shape.text_frame.paragraphs:
                 if marcador in paragraph.text:
                     paragraph.text = marcador
@@ -45,7 +43,7 @@ def adicionar_lista_incremental(slide, marcador, lista):
 
 def adicionar_equipamentos(slide, lista_equipamentos):
     for shape in slide.shapes:
-        if shape.has_text_frame and isinstance(shape.text_frame.text, str):
+        if shape.has_text_frame:
             for paragraph in shape.text_frame.paragraphs:
                 if ":" in paragraph.text:
                     paragraph.text += ":"
@@ -100,6 +98,9 @@ def adicionar_escopo_dinamicos(slide, lista_escopo):
         top += espacamento_vertical
 
 def convert_to_pdf(pptx_path):
+    """
+    Converte o arquivo PPTX para PDF usando fpdf.
+    """
     prs = Presentation(pptx_path)
     pdf = FPDF()
     pdf.set_auto_page_break(auto=True, margin=15)
@@ -108,10 +109,12 @@ def convert_to_pdf(pptx_path):
         pdf.add_page()
         pdf.set_font("Arial", size=12)
 
+        # Adicionar o título e texto do slide (se existir)
         for shape in slide.shapes:
-            if shape.has_text_frame and isinstance(shape.text_frame.text, str):
+            if shape.has_text_frame:
                 text = shape.text_frame.text
-                pdf.multi_cell(0, 10, text)
+                if text.strip():
+                    pdf.multi_cell(0, 10, text)
 
     pdf_path = os.path.splitext(pptx_path)[0] + ".pdf"
     pdf.output(pdf_path)
