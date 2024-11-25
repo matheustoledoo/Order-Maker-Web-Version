@@ -106,19 +106,22 @@ def convert_to_pdf(pptx_path):
     pdf = FPDF()
     pdf.set_auto_page_break(auto=True, margin=15)
 
+    # Usar uma fonte compatível com Unicode
+    pdf.add_font('DejaVu', '', 'DejaVuSans.ttf', uni=True)
+    pdf.set_font('DejaVu', '', 12)
+
     for slide in prs.slides:
         pdf.add_page()
-        pdf.set_font("Arial", size=12)
 
-        # Adicionar o texto do slide
+        # Adicionar o texto de cada slide ao PDF
         for shape in slide.shapes:
             if shape.has_text_frame and shape.text_frame.text.strip():
                 text = shape.text_frame.text
-                pdf.multi_cell(0, 10, text)
 
-    pdf_path = os.path.splitext(pptx_path)[0] + ".pdf"
-    pdf.output(pdf_path)
-    return pdf_path
+                # Substituir caracteres incompatíveis
+                text = text.replace("–", "-").replace("‘", "'").replace("’", "'").replace("“", '"').replace("”", '"')
+
+                pdf.multi_cell(0, 10, text)
 
 @app.route("/", methods=["GET", "POST"])
 def index():
