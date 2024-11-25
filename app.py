@@ -104,15 +104,28 @@ def convert_to_pdf(pptx_path):
     """
     Converte o arquivo PPTX para PDF usando fpdf.
     """
-    pdf_path = os.path.splitext(pptx_path)[0] + ".pdf"
     try:
-        subprocess.run(
-            ["libreoffice", "--headless", "--convert-to", "pdf", "--outdir", os.path.dirname(pptx_path), pptx_path],
-            check=True
-        )
+        prs = Presentation(pptx_path)
+        pdf = FPDF()
+        pdf.set_auto_page_break(auto=True, margin=15)
+
+        for slide in prs.slides:
+            pdf.add_page()
+            pdf.set_font("Arial", size=12)
+
+            for shape in slide.shapes:
+                if shape.has_text_frame:
+                    text = shape.text_frame.text
+                    # Substituir caracteres especiais que causam problemas
+                    text = text.replace("–", "-").replace("‘", "'").replace("’", "'").replace("“", '"').replace("”",
+                                                                                                                '"')
+                    pdf.multi_cell(0, 10, text)
+
+        pdf_path = os.path.splitext(pptx_path)[0] + ".pdf"
+        pdf.output(pdf_path)
         return pdf_path
-    except subprocess.CalledProcessError as e:
-        raise Exception(f"Erro ao converter para PDF: {e}")
+    except Exception as e:
+        raise Exception(f"Erro ao criar PDF: {e}")
 
 @app.route("/", methods=["GET", "POST"])
 def index():
