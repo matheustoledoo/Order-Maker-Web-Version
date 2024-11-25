@@ -44,6 +44,20 @@ def adicionar_lista_incremental(slide, marcador, lista):
                     novo_paragraph.text = item
                     aplicar_formatacao(novo_paragraph)
 
+def adicionar_equipamentos(slide, lista_equipamentos):
+    for shape in slide.shapes:
+        if not shape.has_text_frame:
+            continue
+        for paragraph in shape.text_frame.paragraphs:
+            if ":" in paragraph.text:
+                paragraph.text += ":"
+                aplicar_formatacao(paragraph)
+                for equipamento in lista_equipamentos:
+                    novo_paragraph = shape.text_frame.add_paragraph()
+                    novo_paragraph.text = equipamento
+                    aplicar_formatacao(novo_paragraph)
+                return
+
 def adicionar_objetos_dinamicos(slide, lista_objetos):
     left = Inches(6)
     top = Inches(3.2)
@@ -86,9 +100,13 @@ def adicionar_escopo_dinamicos(slide, lista_escopo):
 
 def convert_to_pdf(pptx_path):
     """
-    Converte o arquivo PPTX para PDF usando FPDF.
+    Converte o arquivo PPTX para PDF usando fpdf.
     """
     try:
+        if not os.path.exists(pptx_path):
+            raise FileNotFoundError(f"O arquivo {pptx_path} não foi encontrado!")
+
+        # Carregar a apresentação PowerPoint
         prs = Presentation(pptx_path)
         pdf = FPDF()
         pdf.set_auto_page_break(auto=True, margin=15)
@@ -100,15 +118,18 @@ def convert_to_pdf(pptx_path):
             for shape in slide.shapes:
                 if shape.has_text_frame:
                     text = shape.text_frame.text
-                    # Substituir caracteres especiais que causam problemas
-                    text = text.replace("–", "-").replace("‘", "'").replace("’", "'").replace("“", '"').replace("”", '"')
+                    # Substituir caracteres especiais para evitar erros
+                    text = text.replace("–", "-").replace("‘", "'").replace("’", "'").replace("“", '"').replace("”",
+                                                                                                                '"')
                     pdf.multi_cell(0, 10, text)
 
+        # Criar o caminho de saída para o PDF
         pdf_path = os.path.splitext(pptx_path)[0] + ".pdf"
         pdf.output(pdf_path)
+
         return pdf_path
     except Exception as e:
-        raise Exception(f"Erro ao criar PDF: {e}")
+        raise Exception(f"Erro ao converter para PDF: {e}")
 
 @app.route("/", methods=["GET", "POST"])
 def index():
@@ -134,6 +155,7 @@ def index():
             substituir_valores_marcadores(prs.slides[10], "}", valor_mobilizacao)
             adicionar_lista_incremental(prs.slides[7], "Campo", campo)
             adicionar_lista_incremental(prs.slides[7], "Processamento", processamento)
+            adicionar_equipamentos(prs.slides[8], equipamentos)
             adicionar_objetos_dinamicos(prs.slides[2], objetos)
             adicionar_escopo_dinamicos(prs.slides[3], escopo)
 
