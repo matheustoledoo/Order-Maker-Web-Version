@@ -65,39 +65,43 @@ def adicionar_objetos_dinamicos(slide, lista_objetos):
     top = Inches(3.2)
     width = Inches(1.5)
     height = Inches(0.5)
-    espacamento_vertical = Inches(0.5)  # Ajuste do espaçamento entre os itens
+    espacamento_vertical = Inches(0.9)
+    limite_caracteres = 40
 
     for obj in lista_objetos:
-        if obj.strip():  # Ignora itens vazios
-            textbox = slide.shapes.add_textbox(left, top, width, height)
-            text_frame = textbox.text_frame
-            text_frame.word_wrap = True
+        textbox = slide.shapes.add_textbox(left, top, width, height)
+        text_frame = textbox.text_frame
+        text_frame.word_wrap = False
+        text_frame.auto_size = False
 
+        linhas = [obj[i:i+limite_caracteres] for i in range(0, len(obj), limite_caracteres)]
+        for linha in linhas:
             paragraph = text_frame.add_paragraph()
-            paragraph.text = obj.strip()  # Garante que o texto é limpo
+            paragraph.text = linha
             aplicar_formatacao(paragraph)
-
-            top += espacamento_vertical
-
+        top += espacamento_vertical
 
 def adicionar_escopo_dinamicos(slide, lista_escopo):
     left = Inches(7.1)
     top = Inches(2.6)
     width = Inches(1.5)
     height = Inches(0.5)
-    espacamento_vertical = Inches(0.5)  # Ajuste do espaçamento entre os itens
+    espacamento_vertical = Inches(0.9)
+    limite_caracteres = 40
 
     for escopo in lista_escopo:
-        if escopo.strip():  # Ignora itens vazios
-            textbox = slide.shapes.add_textbox(left, top, width, height)
-            text_frame = textbox.text_frame
-            text_frame.word_wrap = True
+        textbox = slide.shapes.add_textbox(left, top, width, height)
+        text_frame = textbox.text_frame
+        text_frame.word_wrap = False
+        text_frame.auto_size = False
 
+        linhas = [escopo[i:i+limite_caracteres] for i in range(0, len(escopo), limite_caracteres)]
+        for linha in linhas:
             paragraph = text_frame.add_paragraph()
-            paragraph.text = escopo.strip()  # Garante que o texto é limpo
+            paragraph.text = linha
             aplicar_formatacao(paragraph)
+        top += espacamento_vertical
 
-            top += espacamento_vertical
 
 
 def convert_to_pdf(pptx_path):
