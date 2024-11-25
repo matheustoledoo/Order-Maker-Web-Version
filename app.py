@@ -4,8 +4,7 @@ from flask import Flask, render_template, request, send_file
 from pptx import Presentation
 from pptx.util import Pt, Inches
 from pptx.dml.color import RGBColor
-import subprocess
-
+from fpdf import FPDF
 
 app = Flask(__name__)
 app.config["UPLOAD_FOLDER"] = os.path.abspath("files")  # Caminho absoluto
@@ -50,6 +49,7 @@ def adicionar_lista_incremental(slide, marcador, lista):
                         novo_paragraph.text = item
                         aplicar_formatacao(novo_paragraph)
 
+
 def adicionar_equipamentos(slide, lista_equipamentos):
     for shape in slide.shapes:
         if shape.has_text_frame:
@@ -67,6 +67,7 @@ def adicionar_equipamentos(slide, lista_equipamentos):
                         aplicar_formatacao(novo_paragraph)
                     return
 
+
 def adicionar_objetos_dinamicos(slide, lista_objetos):
     left = Inches(6)
     top = Inches(3.2)
@@ -78,15 +79,16 @@ def adicionar_objetos_dinamicos(slide, lista_objetos):
     for obj in lista_objetos:
         textbox = slide.shapes.add_textbox(left, top, width, height)
         text_frame = textbox.text_frame
-        text_frame.word_wrap = False
-        text_frame.auto_size = False
+        text_frame.word_wrap = True  # Permitir quebra de linha
+        text_frame.auto_size = True  # Ajustar tamanho automaticamente
 
-        linhas = [obj[i:i+limite_caracteres] for i in range(0, len(obj), limite_caracteres)]
+        linhas = [obj[i:i + limite_caracteres] for i in range(0, len(obj), limite_caracteres)]
         for linha in linhas:
             paragraph = text_frame.add_paragraph()
             paragraph.text = linha
             aplicar_formatacao(paragraph)
         top += espacamento_vertical
+
 
 def adicionar_escopo_dinamicos(slide, lista_escopo):
     left = Inches(7.1)
@@ -99,21 +101,20 @@ def adicionar_escopo_dinamicos(slide, lista_escopo):
     for escopo in lista_escopo:
         textbox = slide.shapes.add_textbox(left, top, width, height)
         text_frame = textbox.text_frame
-        text_frame.word_wrap = False
-        text_frame.auto_size = False
+        text_frame.word_wrap = True
+        text_frame.auto_size = True
 
-        linhas = [escopo[i:i+limite_caracteres] for i in range(0, len(escopo), limite_caracteres)]
+        linhas = [escopo[i:i + limite_caracteres] for i in range(0, len(escopo), limite_caracteres)]
         for linha in linhas:
             paragraph = text_frame.add_paragraph()
             paragraph.text = linha
             aplicar_formatacao(paragraph)
         top += espacamento_vertical
 
-from fpdf import FPDF
 
 def convert_to_pdf(pptx_path):
     """
-    Converte o arquivo PPTX para PDF usando LibreOffice via unoconv.
+    Converte o arquivo PPTX para PDF usando FPDF.
     """
     prs = Presentation(pptx_path)
     pdf = FPDF()
