@@ -71,12 +71,11 @@ def adicionar_objetos_dinamicos(slide, lista_objetos):
         textbox = slide.shapes.add_textbox(left, top, width, height)
         text_frame = textbox.text_frame
         text_frame.word_wrap = True
-        text_frame.auto_size = True  # Ajusta automaticamente o tamanho do texto ao conteúdo
 
-        paragraph = text_frame.add_paragraph()
-        paragraph.text = obj  # Adiciona o texto diretamente sem quebra manual
-        aplicar_formatacao(paragraph)  # Aplica formatação padrão
-
+        if isinstance(obj, str):  # Garante que obj é string
+            paragraph = text_frame.add_paragraph()
+            paragraph.text = obj
+            aplicar_formatacao(paragraph)
         top += espacamento_vertical
 
 def adicionar_escopo_dinamicos(slide, lista_escopo):
@@ -90,13 +89,13 @@ def adicionar_escopo_dinamicos(slide, lista_escopo):
         textbox = slide.shapes.add_textbox(left, top, width, height)
         text_frame = textbox.text_frame
         text_frame.word_wrap = True
-        text_frame.auto_size = True  # Ajusta automaticamente o tamanho do texto ao conteúdo
 
-        paragraph = text_frame.add_paragraph()
-        paragraph.text = escopo  # Adiciona o texto diretamente sem quebra manual
-        aplicar_formatacao(paragraph)  # Aplica formatação padrão
-
+        if isinstance(escopo, str):  # Garante que escopo é string
+            paragraph = text_frame.add_paragraph()
+            paragraph.text = escopo
+            aplicar_formatacao(paragraph)
         top += espacamento_vertical
+
 
 def convert_to_pdf(pptx_path):
     """
