@@ -15,6 +15,8 @@ def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in app.config["ALLOWED_EXTENSIONS"]
 
 def aplicar_formatacao(paragraph, fonte="Codec Pro", tamanho=24, cor=(0, 0, 0)):
+    if not hasattr(paragraph, "runs"):
+        return
     for run in paragraph.runs:
         run.font.name = fonte
         run.font.size = Pt(tamanho)
@@ -22,38 +24,39 @@ def aplicar_formatacao(paragraph, fonte="Codec Pro", tamanho=24, cor=(0, 0, 0)):
 
 def substituir_valores_marcadores(slide, marcador, valor):
     for shape in slide.shapes:
-        if shape.has_text_frame:
-            for paragraph in shape.text_frame.paragraphs:
-                if marcador in paragraph.text:
-                    paragraph.text = paragraph.text.replace(marcador, valor)
-                    aplicar_formatacao(paragraph)
+        if not shape.has_text_frame:
+            continue
+        for paragraph in shape.text_frame.paragraphs:
+            if isinstance(paragraph.text, str) and marcador in paragraph.text:
+                paragraph.text = paragraph.text.replace(marcador, valor)
+                aplicar_formatacao(paragraph)
 
 def adicionar_lista_incremental(slide, marcador, lista):
     for shape in slide.shapes:
-        if shape.has_text_frame:
-            for paragraph in shape.text_frame.paragraphs:
-                if marcador in paragraph.text:
-                    paragraph.text = marcador
-                    aplicar_formatacao(paragraph)
-
-                    for item in lista:
-                        novo_paragraph = shape.text_frame.add_paragraph()
-                        novo_paragraph.text = item
-                        aplicar_formatacao(novo_paragraph)
+        if not shape.has_text_frame:
+            continue
+        for paragraph in shape.text_frame.paragraphs:
+            if isinstance(paragraph.text, str) and marcador in paragraph.text:
+                paragraph.text = marcador
+                aplicar_formatacao(paragraph)
+                for item in lista:
+                    novo_paragraph = shape.text_frame.add_paragraph()
+                    novo_paragraph.text = item
+                    aplicar_formatacao(novo_paragraph)
 
 def adicionar_equipamentos(slide, lista_equipamentos):
     for shape in slide.shapes:
-        if shape.has_text_frame:
-            for paragraph in shape.text_frame.paragraphs:
-                if ":" in paragraph.text:
-                    paragraph.text += ":"
-                    aplicar_formatacao(paragraph)
-
-                    for equipamento in lista_equipamentos:
-                        novo_paragraph = shape.text_frame.add_paragraph()
-                        novo_paragraph.text = equipamento
-                        aplicar_formatacao(novo_paragraph)
-                    return
+        if not shape.has_text_frame:
+            continue
+        for paragraph in shape.text_frame.paragraphs:
+            if isinstance(paragraph.text, str) and ":" in paragraph.text:
+                paragraph.text += ":"
+                aplicar_formatacao(paragraph)
+                for equipamento in lista_equipamentos:
+                    novo_paragraph = shape.text_frame.add_paragraph()
+                    novo_paragraph.text = equipamento
+                    aplicar_formatacao(novo_paragraph)
+                return
 
 def adicionar_objetos_dinamicos(slide, lista_objetos):
     left = Inches(6)
@@ -109,7 +112,7 @@ def convert_to_pdf(pptx_path):
         pdf.add_page()
         pdf.set_font("Arial", size=12)
 
-        # Adicionar o título e texto do slide (se existir)
+        # Adicionar o texto do slide
         for shape in slide.shapes:
             if shape.has_text_frame:
                 text = shape.text_frame.text
