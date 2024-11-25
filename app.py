@@ -65,36 +65,39 @@ def adicionar_objetos_dinamicos(slide, lista_objetos):
     top = Inches(3.2)
     width = Inches(1.5)
     height = Inches(0.5)
-    espacamento_vertical = Inches(0.9)
+    espacamento_vertical = Inches(0.5)  # Ajuste do espaçamento entre os itens
 
     for obj in lista_objetos:
-        textbox = slide.shapes.add_textbox(left, top, width, height)
-        text_frame = textbox.text_frame
-        text_frame.word_wrap = True
+        if obj.strip():  # Ignora itens vazios
+            textbox = slide.shapes.add_textbox(left, top, width, height)
+            text_frame = textbox.text_frame
+            text_frame.word_wrap = True
 
-        if isinstance(obj, str):  # Garante que obj é string
             paragraph = text_frame.add_paragraph()
-            paragraph.text = obj
+            paragraph.text = obj.strip()  # Garante que o texto é limpo
             aplicar_formatacao(paragraph)
-        top += espacamento_vertical
+
+            top += espacamento_vertical
+
 
 def adicionar_escopo_dinamicos(slide, lista_escopo):
     left = Inches(7.1)
     top = Inches(2.6)
     width = Inches(1.5)
     height = Inches(0.5)
-    espacamento_vertical = Inches(0.9)
+    espacamento_vertical = Inches(0.5)  # Ajuste do espaçamento entre os itens
 
     for escopo in lista_escopo:
-        textbox = slide.shapes.add_textbox(left, top, width, height)
-        text_frame = textbox.text_frame
-        text_frame.word_wrap = True
+        if escopo.strip():  # Ignora itens vazios
+            textbox = slide.shapes.add_textbox(left, top, width, height)
+            text_frame = textbox.text_frame
+            text_frame.word_wrap = True
 
-        if isinstance(escopo, str):  # Garante que escopo é string
             paragraph = text_frame.add_paragraph()
-            paragraph.text = escopo
+            paragraph.text = escopo.strip()  # Garante que o texto é limpo
             aplicar_formatacao(paragraph)
-        top += espacamento_vertical
+
+            top += espacamento_vertical
 
 
 def convert_to_pdf(pptx_path):
