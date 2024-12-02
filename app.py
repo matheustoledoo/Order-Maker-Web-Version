@@ -125,7 +125,7 @@ def atualizar_prazo(slide, marcador, valor):
         if not shape.has_text_frame:
             continue
         for paragraph in shape.text_frame.paragraphs:
-            if marcador in paragraph.text:
+            if isinstance(paragraph.text, str) and marcador in paragraph.text:
                 # Substitui o marcador e aplica a formatação
                 paragraph.text = paragraph.text.replace(marcador, valor)
                 aplicar_formatacao(paragraph)
@@ -135,8 +135,8 @@ def atualizar_prazo(slide, marcador, valor):
                 shape.text_frame.auto_size = True  # Ajustar automaticamente ao texto
 
                 # Ajuste manual das dimensões da caixa de texto
-                if shape.width < Inches(15):  # Verifica se a largura é menor que o necessário
-                    shape.width = Inches(15)  # Define uma largura suficiente
+                if shape.width < Inches(12):  # Verifica se a largura é menor que o necessário
+                    shape.width = Inches(12)  # Define uma largura suficiente
                 if shape.height < Inches(1):  # Verifica se a altura é menor que o necessário
                     shape.height = Inches(1.5)  # Define uma altura suficiente
 
