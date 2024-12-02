@@ -16,7 +16,7 @@ app.config["ALLOWED_EXTENSIONS"] = {"pptx"}
 def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in app.config["ALLOWED_EXTENSIONS"]
 
-def aplicar_formatacao(paragraph, fonte="Codec Pro", tamanho=24, cor=(0, 0, 0)):
+def aplicar_formatacao(paragraph, fonte="Codec Pro", tamanho=25, cor=(0, 0, 0)):
     if not hasattr(paragraph, "runs"):
         return
     for run in paragraph.runs:
@@ -28,6 +28,12 @@ def substituir_valores_marcadores(slide, marcador, valor):
     for shape in slide.shapes:
         if not shape.has_text_frame or not isinstance(marcador, str):
             continue
+        # Ajustar o tamanho da caixa de texto
+        if shape.width < Inches(7):  # Verifica se a largura é menor que o necessário
+            shape.width = Inches(7)  # Define uma largura suficiente
+        if shape.height < Inches(1):  # Verifica se a altura é menor que o necessário
+            shape.height = Inches(1.5)  # Define uma altura suficiente
+
         for paragraph in shape.text_frame.paragraphs:
             if marcador in paragraph.text:
                 paragraph.text = paragraph.text.replace(marcador, valor)
