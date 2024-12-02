@@ -29,8 +29,8 @@ def substituir_valores_marcadores(slide, marcador, valor):
         if not shape.has_text_frame or not isinstance(marcador, str):
             continue
         # Ajustar o tamanho da caixa de texto
-        if shape.width < Inches(7):  # Verifica se a largura é menor que o necessário
-            shape.width = Inches(7)  # Define uma largura suficiente
+        if shape.width < Inches(12):  # Verifica se a largura é menor que o necessário
+            shape.width = Inches(12)  # Define uma largura suficiente
         if shape.height < Inches(1):  # Verifica se a altura é menor que o necessário
             shape.height = Inches(1.5)  # Define uma altura suficiente
 
@@ -114,6 +114,19 @@ def adicionar_escopo_dinamicos(slide, lista_escopo):
             top += espacamento_vertical
 
 
+def atualizar_prazo(slide, marcador, valor):
+    """
+    Substitui o marcador `+` pelo valor fornecido no slide 10.
+    """
+    for shape in slide.shapes:
+        if not shape.has_text_frame:
+            continue
+        for paragraph in shape.text_frame.paragraphs:
+            if marcador in paragraph.text:
+                paragraph.text = paragraph.text.replace(marcador, valor)
+                aplicar_formatacao(paragraph)
+
+
 def convert_to_pdf(pptx_path):
     """
     Converte o arquivo PPTX para PDF usando fpdf.
@@ -152,6 +165,7 @@ def index():
             nome_cliente = request.form.get("nome_cliente", "")
             valor_servico = request.form.get("valor_servico", "")
             valor_mobilizacao = request.form.get("valor_mobilizacao", "")
+            prazo = request.form.get("prazo", "")
             objetos = request.form.get("objetos", "").splitlines()
             escopo = request.form.get("escopo", "").splitlines()
             campo = request.form.get("campo", "").splitlines()
@@ -168,6 +182,7 @@ def index():
             adicionar_equipamentos(prs.slides[8], equipamentos)
             adicionar_objetos_dinamicos(prs.slides[2], objetos)
             adicionar_escopo_dinamicos(prs.slides[3], escopo)
+            atualizar_prazo(prs.slides[10], "+", prazo)
 
             if texto_slide11.strip():
                 for shape in prs.slides[11].shapes:
