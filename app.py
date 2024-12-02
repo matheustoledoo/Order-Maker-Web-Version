@@ -5,6 +5,7 @@ from pptx import Presentation
 from pptx.util import Pt, Inches
 from pptx.dml.color import RGBColor
 from fpdf import FPDF
+from pptx.enum.text import PP_ALIGN
 import subprocess
 
 
@@ -114,6 +115,7 @@ def adicionar_escopo_dinamicos(slide, lista_escopo):
             top += espacamento_vertical
 
 
+
 def atualizar_prazo(slide, marcador, valor):
     """
     Substitui o marcador `+` pelo valor fornecido no slide 10,
@@ -129,7 +131,7 @@ def atualizar_prazo(slide, marcador, valor):
                 aplicar_formatacao(paragraph)
 
                 # Garantir que o alinhamento permaneça consistente
-                shape.text_frame.paragraphs[0].alignment = 0  # Alinhamento à esquerda
+                paragraph.alignment = PP_ALIGN.LEFT  # Alinhamento à esquerda
                 shape.text_frame.auto_size = True  # Ajustar automaticamente ao texto
 
                 # Ajuste manual das dimensões da caixa de texto
@@ -137,6 +139,7 @@ def atualizar_prazo(slide, marcador, valor):
                     shape.width = Inches(15)  # Define uma largura suficiente
                 if shape.height < Inches(1):  # Verifica se a altura é menor que o necessário
                     shape.height = Inches(1.5)  # Define uma altura suficiente
+
 
 
 def convert_to_pdf(pptx_path):
