@@ -119,33 +119,37 @@ def adicionar_escopo_dinamicos(slide, lista_escopo):
 def atualizar_prazo(slide, marcador, valor):
     """
     Substitui o marcador `+` pelo valor fornecido no slide 10,
-    mantendo o alinhamento e a formatação adequada.
+    garantindo alinhamento e consistência no texto.
     """
     for shape in slide.shapes:
         # Verifica se o shape tem um text_frame válido
-        if not shape.has_text_frame:
+        if not hasattr(shape, 'text_frame') or not shape.has_text_frame:
             continue
 
-        # Ajuste o tamanho da caixa de texto, se necessário
-        if shape.width < Inches(12):  # Define largura mínima
+        # Ajusta o tamanho da caixa de texto, se necessário
+        if hasattr(shape, 'width') and shape.width < Inches(12):
             shape.width = Inches(12)
-        if shape.height < Inches(1.5):  # Define altura mínima
+        if hasattr(shape, 'height') and shape.height < Inches(1.5):
             shape.height = Inches(1.5)
 
         # Itera sobre os parágrafos no text_frame
         for paragraph in shape.text_frame.paragraphs:
-            # Confirma que paragraph.text é uma string antes de verificar 'in'
-            if isinstance(paragraph.text, str) and marcador in paragraph.text:
-                # Substitui o marcador pelo valor fornecido
-                paragraph.text = paragraph.text.replace(marcador, valor)
-                aplicar_formatacao(paragraph)  # Reaplica formatação
+            # Garante que paragraph.text seja uma string antes de manipular
+            if paragraph.text and isinstance(paragraph.text, str):
+                # Verifica se o marcador está no texto
+                if marcador in paragraph.text:
+                    # Substitui o marcador pelo valor fornecido
+                    paragraph.text = paragraph.text.replace(marcador, valor)
+                    aplicar_formatacao(paragraph)  # Reaplica formatação
 
-                # Configura alinhamento à esquerda para o texto
-                paragraph.alignment = PP_ALIGN.LEFT
+                    # Define alinhamento à esquerda
+                    paragraph.alignment = PP_ALIGN.LEFT
 
         # Garante que o texto se ajuste automaticamente ao tamanho da caixa
-        shape.text_frame.word_wrap = True
-        shape.text_frame.auto_size = True
+        if hasattr(shape.text_frame, 'word_wrap'):
+            shape.text_frame.word_wrap = True
+        if hasattr(shape.text_frame, 'auto_size'):
+            shape.text_frame.auto_size = True
 
 
 def convert_to_pdf(pptx_path):
