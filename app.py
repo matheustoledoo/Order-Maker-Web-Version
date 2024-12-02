@@ -5,7 +5,6 @@ from pptx import Presentation
 from pptx.util import Pt, Inches
 from pptx.dml.color import RGBColor
 from fpdf import FPDF
-from pptx.enum.text import PP_ALIGN
 import subprocess
 
 
@@ -119,37 +118,14 @@ def adicionar_escopo_dinamicos(slide, lista_escopo):
 def atualizar_prazo(slide, marcador, valor):
     """
     Substitui o marcador `+` pelo valor fornecido no slide 10,
-    garantindo alinhamento e consistência no texto.
+    mantendo simplicidade e consistência.
     """
     for shape in slide.shapes:
-        # Verifica se o shape tem um text_frame válido
-        if not hasattr(shape, 'text_frame') or not shape.has_text_frame:
-            continue
-
-        # Ajusta o tamanho da caixa de texto, se necessário
-        if hasattr(shape, 'width') and shape.width < Inches(12):
-            shape.width = Inches(12)
-        if hasattr(shape, 'height') and shape.height < Inches(1.5):
-            shape.height = Inches(1.5)
-
-        # Itera sobre os parágrafos no text_frame
-        for paragraph in shape.text_frame.paragraphs:
-            # Garante que paragraph.text seja uma string antes de manipular
-            if paragraph.text and isinstance(paragraph.text, str):
-                # Verifica se o marcador está no texto
-                if marcador in paragraph.text:
-                    # Substitui o marcador pelo valor fornecido
-                    paragraph.text = paragraph.text.replace(marcador, valor)
-                    aplicar_formatacao(paragraph)  # Reaplica formatação
-
-                    # Define alinhamento à esquerda
-                    paragraph.alignment = PP_ALIGN.LEFT
-
-        # Garante que o texto se ajuste automaticamente ao tamanho da caixa
-        if hasattr(shape.text_frame, 'word_wrap'):
-            shape.text_frame.word_wrap = True
-        if hasattr(shape.text_frame, 'auto_size'):
-            shape.text_frame.auto_size = True
+        if shape.has_text_frame:  # Certifica-se de que o shape possui texto
+            for paragraph in shape.text_frame.paragraphs:
+                if marcador in paragraph.text:  # Verifica se o marcador está no texto
+                    paragraph.text = paragraph.text.replace(marcador, valor)  # Substitui o marcador pelo valor
+                    aplicar_formatacao(paragraph)  # Aplica a formatação ao texto atualizado
 
 
 def convert_to_pdf(pptx_path):
@@ -208,6 +184,7 @@ def index():
             adicionar_objetos_dinamicos(prs.slides[2], objetos)
             adicionar_escopo_dinamicos(prs.slides[3], escopo)
             atualizar_prazo(prs.slides[10], "+", prazo)
+
 
             if texto_slide11.strip():
                 for shape in prs.slides[11].shapes:
