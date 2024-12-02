@@ -122,24 +122,30 @@ def atualizar_prazo(slide, marcador, valor):
     mantendo o alinhamento e a formatação adequada.
     """
     for shape in slide.shapes:
+        # Verifica se o shape tem um text_frame válido
         if not shape.has_text_frame:
             continue
+
+        # Ajuste o tamanho da caixa de texto, se necessário
+        if shape.width < Inches(12):  # Define largura mínima
+            shape.width = Inches(12)
+        if shape.height < Inches(1.5):  # Define altura mínima
+            shape.height = Inches(1.5)
+
+        # Itera sobre os parágrafos no text_frame
         for paragraph in shape.text_frame.paragraphs:
+            # Confirma que paragraph.text é uma string antes de verificar 'in'
             if isinstance(paragraph.text, str) and marcador in paragraph.text:
-                # Substitui o marcador e aplica a formatação
+                # Substitui o marcador pelo valor fornecido
                 paragraph.text = paragraph.text.replace(marcador, valor)
-                aplicar_formatacao(paragraph)
+                aplicar_formatacao(paragraph)  # Reaplica formatação
 
-                # Garantir que o alinhamento permaneça consistente
-                paragraph.alignment = PP_ALIGN.LEFT  # Alinhamento à esquerda
-                shape.text_frame.auto_size = True  # Ajustar automaticamente ao texto
+                # Configura alinhamento à esquerda para o texto
+                paragraph.alignment = PP_ALIGN.LEFT
 
-                # Ajuste manual das dimensões da caixa de texto
-                if shape.width < Inches(12):  # Verifica se a largura é menor que o necessário
-                    shape.width = Inches(12)  # Define uma largura suficiente
-                if shape.height < Inches(1):  # Verifica se a altura é menor que o necessário
-                    shape.height = Inches(1.5)  # Define uma altura suficiente
-
+        # Garante que o texto se ajuste automaticamente ao tamanho da caixa
+        shape.text_frame.word_wrap = True
+        shape.text_frame.auto_size = True
 
 
 def convert_to_pdf(pptx_path):
