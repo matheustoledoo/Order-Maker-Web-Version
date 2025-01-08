@@ -177,9 +177,6 @@ def index():
             texto_slide11 = request.form.get("texto_slide11", "")
             action = request.form.get("action")
 
-            if action:
-                contador + 1
-
             substituir_valores_marcadores(prs.slides[1], "{", nome_cliente)
             substituir_valores_marcadores(prs.slides[1], "}", str(contador))
             substituir_valores_marcadores(prs.slides[10], "{", valor_servico)
@@ -190,8 +187,6 @@ def index():
             adicionar_objetos_dinamicos(prs.slides[2], objetos)
             adicionar_escopo_dinamicos(prs.slides[3], escopo)
             atualizar_prazo(prs.slides[10], "+", prazo)
-
-            
 
 
 
@@ -207,6 +202,7 @@ def index():
             # Salvar arquivo temporário PPTX
             output_path = os.path.abspath(os.path.join(app.config["UPLOAD_FOLDER"], f"editado_{uuid.uuid4().hex}.pptx"))
             prs.save(output_path)
+            contador + 1
 
             # Converter para PDF se necessário
             if action == "pdf":
