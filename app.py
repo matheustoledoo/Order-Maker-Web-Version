@@ -181,7 +181,7 @@ def index():
                 contador + 1
 
             substituir_valores_marcadores(prs.slides[1], "{", nome_cliente)
-            substituir_valores_marcadores(prs.slides[1], "}", contador)
+            substituir_valores_marcadores(prs.slides[1], "}", str(contador))
             substituir_valores_marcadores(prs.slides[10], "{", valor_servico)
             substituir_valores_marcadores(prs.slides[10], "}", valor_mobilizacao)
             adicionar_lista_incremental(prs.slides[7], "Campo", campo)
@@ -190,6 +190,9 @@ def index():
             adicionar_objetos_dinamicos(prs.slides[2], objetos)
             adicionar_escopo_dinamicos(prs.slides[3], escopo)
             atualizar_prazo(prs.slides[10], "+", prazo)
+
+            
+
 
 
             if texto_slide11.strip():
