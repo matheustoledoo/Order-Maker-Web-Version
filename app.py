@@ -165,9 +165,6 @@ def index():
             caminho_arquivo = os.path.join(app.config["UPLOAD_FOLDER"], arquivo)
             prs = Presentation(caminho_arquivo)
 
-            if action:
-                contador + 1
-
             nome_cliente = request.form.get("nome_cliente", "")
             valor_servico = request.form.get("valor_servico", "")
             valor_mobilizacao = request.form.get("valor_mobilizacao", "")
@@ -179,6 +176,9 @@ def index():
             equipamentos = request.form.get("equipamentos", "").splitlines()
             texto_slide11 = request.form.get("texto_slide11", "")
             action = request.form.get("action")
+
+            if action:
+                contador + 1
 
             substituir_valores_marcadores(prs.slides[1], "{", nome_cliente)
             substituir_valores_marcadores(prs.slides[1], "}", contador)
