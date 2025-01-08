@@ -155,6 +155,8 @@ def convert_to_pdf(pptx_path):
     except Exception as e:
         raise Exception(f"Erro ao criar PDF: {e}")
 
+contador = 1
+
 @app.route("/", methods=["GET", "POST"])
 def index():
     if request.method == "POST":
@@ -162,6 +164,9 @@ def index():
             arquivo = request.form["arquivo"]
             caminho_arquivo = os.path.join(app.config["UPLOAD_FOLDER"], arquivo)
             prs = Presentation(caminho_arquivo)
+
+            if action:
+                contador + 1
 
             nome_cliente = request.form.get("nome_cliente", "")
             valor_servico = request.form.get("valor_servico", "")
@@ -176,6 +181,7 @@ def index():
             action = request.form.get("action")
 
             substituir_valores_marcadores(prs.slides[1], "{", nome_cliente)
+            substituir_valores_marcadores(prs.slides[1], "}", contador)
             substituir_valores_marcadores(prs.slides[10], "{", valor_servico)
             substituir_valores_marcadores(prs.slides[10], "}", valor_mobilizacao)
             adicionar_lista_incremental(prs.slides[7], "Campo", campo)
@@ -209,6 +215,8 @@ def index():
             return send_file(output_path, as_attachment=True, download_name=os.path.basename(output_path), mimetype="application/pdf" if action == "pdf" else "application/vnd.openxmlformats-officedocument.presentationml.presentation")
         except Exception as e:
             return f"Erro no processamento: {e}"
+        
+        
 
     arquivos = [f for f in os.listdir(app.config["UPLOAD_FOLDER"]) if allowed_file(f)]
     return render_template("index.html", arquivos=arquivos)
